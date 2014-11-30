@@ -4,6 +4,7 @@
     <title>Visuline</title>
 	<script type="text/javascript" src="three.min.js"></script>
 	<script type="text/javascript" src="stats.min.js"></script>
+	<script type="text/javascript" src="DataStream.js"></script>
 	<style>
 	  body {
 	  	margin : 0px;
@@ -15,7 +16,6 @@
     <script>
       var socket = io();
       socket.on('newFrame', function(msg) {
-      	console.log(msg);
       	animate(msg);
       });
     </script>

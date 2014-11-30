@@ -48,7 +48,6 @@ function init() {
 	stats.domElement.style.position = 'absolute';
 	stats.domElement.style.top = '0px';
 	document.body.appendChild( stats.domElement );
-
 }
 
 function animate(chunk) {
@@ -62,13 +61,17 @@ function animate(chunk) {
 		for the block. You can look at this value to get a feel for how well the vector 
 		represents the match to the reference frame (I’ve ignored it in creating the gif)
 	*/
+	var data = new DataStream(chunk.data, 0, DataStream.BIG_ENDIAN);
 
 	var color = new THREE.Color();
 	color.setRGB( Math.random(), Math.random(), Math.random() );
 	for (var i = 0; i < pixels*3; i+=3) {
-		colors[i + 0] = color.r;
-		colors[i + 1] = color.g;
-		colors[i + 2] = color.b;
+		var sad = data.readInt16();
+		var dy = data.readInt8();
+		var dx = data.readInt8();
+		colors[i + 0] = (dx+127)/255;
+		colors[i + 1] = (dy+127)/255;
+		colors[i + 2] = sad/64000 + 0.5;
 	}
 	geometry.addAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) );
 
