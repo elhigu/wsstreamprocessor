@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Visuline</title>
+	<script type="text/javascript" src="three.min.js"></script>
+	<script type="text/javascript" src="stats.min.js"></script>
+	<style>
+	  body {
+	  	margin : 0px;
+	  }
+	</style>
+  </head>
+  <body>
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+      var socket = io();
+      socket.on('newFrame', function(msg) {
+      	console.log(msg);
+      	animate(msg);
+      });
+    </script>
+    <script type="text/javascript" src="webgl.js"></script>
+  </body>
+</html>
