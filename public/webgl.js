@@ -51,6 +51,10 @@ function init() {
 }
 
 function animate(chunk) {
+    // update previous frame and record stats, then start processing new chunk
+    renderer.render( scene, camera );
+    stats.update();
+
 	/*
 		struct motion_vector {
 		    short sad;
@@ -69,9 +73,12 @@ function animate(chunk) {
 		var sad = data.readInt16();
 		var dy = data.readInt8();
 		var dx = data.readInt8();
+		// TODO: add shader code editor to page to allow easily to change
+		//       it during execution.. try to figure out amount of movement from
+		//       vectors... to recognize where an object should be after rotation
 		colors[i + 0] = (dx+127)/255;
 		colors[i + 1] = (dy+127)/255;
-		colors[i + 2] = sad/64000 + 0.5;
+		colors[i + 2] = sad/32000 + 0.5;
 	}
 	geometry.addAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) );
 
@@ -79,7 +86,4 @@ function animate(chunk) {
 	// var geometryAttributes = new THREE.BufferAttribute(chunk.data, 4);
 	// TODO: maybe this should be set to normals?
 
-    // requestAnimationFrame( animate );
-    renderer.render( scene, camera );
-    stats.update();
 }
