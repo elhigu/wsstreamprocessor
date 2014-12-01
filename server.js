@@ -26,7 +26,7 @@ http.listen(3000, function(){
 });
 
 var frameCount = 0;
-var frameLength = Math.ceil(1920/16)*Math.ceil(1080/16)*4;
+var frameLength = (Math.floor(1920/16)+1)*(Math.floor(1080/16)+1)*4;
 
 process.stdin.on('readable', function() {
   process.stdin.read(0);

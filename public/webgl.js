@@ -1,9 +1,9 @@
 var scene, camera, renderer;
 var geometry, material, mesh;
 
-var width = Math.floor(1920/16);
-var height = Math.ceil(1080/16);
-var pixels =  width*height;
+var width = Math.floor(1920/16)+1;
+var height = Math.floor(1080/16)+1;
+var pixels = width*height;
 var vertices = new Float32Array(pixels*3);
 var colors = new Float32Array(pixels*3);
 var stats = new Stats();
