@@ -1,8 +1,8 @@
 var scene, camera, renderer;
 var geometry, material, mesh;
 
-var height = Math.floor(1080/16);
 var width = Math.floor(1920/16);
+var height = Math.ceil(1080/16);
 var pixels =  width*height;
 var vertices = new Float32Array(pixels*3);
 var colors = new Float32Array(pixels*3);
@@ -76,9 +76,10 @@ function animate(chunk) {
 		// TODO: add shader code editor to page to allow easily to change
 		//       it during execution.. try to figure out amount of movement from
 		//       vectors... to recognize where an object should be after rotation
-		colors[i + 0] = (dx+127)/255;
-		colors[i + 1] = (dy+127)/255;
-		colors[i + 2] = sad/32000 + 0.5;
+		var sadScaler = sad/32000 + 0.5;
+		colors[i + 0] = (dx+127)/255 * sadScaler;
+		colors[i + 1] = (dy+127)/255 * sadScaler;
+		colors[i + 2] = sadScaler;
 	}
 	geometry.addAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) );
 
