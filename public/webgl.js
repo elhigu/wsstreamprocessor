@@ -57,33 +57,21 @@ function init() {
 
 function animate(chunk) {
     statsMs.begin();
-    // update previous frame and record stats, then start processing new chunk
-    /*
-	struct motion_vector {
-	  short sad;
-	  char y_vector;
-	  char x_vector;
-	}
-	So encodes more than just the vector but also the SAD (Sum of Absolute Difference) 
-	for the block. You can look at this value to get a feel for how well the vector 
-	represents the match to the reference frame (I’ve ignored it in creating the gif)
-    */
 	var data = new DataStream(chunk.data, 0, DataStream.LITTLE_ENDIAN);
 
 	var color = new THREE.Color();
 	color.setRGB( Math.random(), Math.random(), Math.random() );
 
-	// TODO: get dx / dy / sad min and max values for stats
-	// TODO: I'm pretty sure stuff is not the way that mentioned above
 	for (var i = 0; i < pixels*3; i+=3) {
-		var sad = data.readInt16();
 		var dy = data.readInt8();
 		var dx = data.readInt8();
-		var sadScaler = sad/65000;
-		var threshold = 0;
-		colors[i + 0] = dy > threshold ? dy/128 : 0;
-		colors[i + 1] = dx/256 + 0.1;
-		colors[i + 2] = dy < -threshold ? -dy/128 : 0;
+		var sad = data.readInt16();
+		var hue = (Math.atan2(dx, dy)/Math.PI+1)/2;
+		var lightness = Math.sqrt(dx*dx + dy*dy)/128;
+		color.setHSL(hue, 1, lightness);
+		colors[i + 0] = color.r;
+		colors[i + 1] = color.g;
+		colors[i + 2] = color.b;
 	}
 	geometry.addAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) );
         renderer.render( scene, camera );
