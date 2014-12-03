@@ -63,8 +63,8 @@ function animate(chunk) {
 	color.setRGB( Math.random(), Math.random(), Math.random() );
 
 	for (var i = 0; i < pixels*3; i+=3) {
-		var dy = data.readInt8();
 		var dx = data.readInt8();
+		var dy = data.readInt8();
 		var sad = data.readInt16();
 		var hue = (Math.atan2(dx, dy)/Math.PI+1)/2;
 		var lightness = Math.sqrt(dx*dx + dy*dy)/128;
