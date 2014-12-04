@@ -16,8 +16,8 @@ function init() {
 
   scene = new THREE.Scene();
 
-  camera = new THREE.PerspectiveCamera(1, window.innerWidth / window.innerHeight, 1, 10000);
-  camera.position.z = 8000;
+  camera = new THREE.PerspectiveCamera(27, 1920 / 1080, 5, 3000);
+  camera.position.z = 200;
 
   geometry = new THREE.BufferGeometry();
 
@@ -34,8 +34,8 @@ function init() {
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
 
   material = new THREE.PointCloudMaterial({
-    size: 99.0,
-    sizeAttenuation: true,
+    size: 15,
+    sizeAttenuation: false,
     vertexColors: THREE.VertexColors
   });
   mesh = new THREE.PointCloud(geometry, material);
@@ -59,12 +59,12 @@ function init() {
 }
 
 document.onmousewheel = function (event) {
-  camera.position.z += event.wheelDeltaY * 0.5;
+  camera.position.z += event.wheelDeltaY * 0.1;
   if (camera.position < 0) {
     camera.position.z = 0;
   }
-  if (camera.position.z > 8000) {
-    camera.position.z = 8000;
+  if (camera.position.z > 200) {
+    camera.position.z = 200;
   }
 };
 
@@ -118,8 +118,10 @@ function animate(chunk) {
     colors[i + 0] = color.r;
     colors[i + 1] = color.g;
     colors[i + 2] = color.b;
+    vertices[i + 2] = hue*128-64;
   }
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
   renderer.render(scene, camera);
   statsMs.end();
   statsFps.update();
