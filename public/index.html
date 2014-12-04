@@ -9,9 +9,18 @@
 	  body {
 	  	margin : 0px;
 	  }
+
+          #canvasWrapper {
+            position: fixed;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+          }
 	</style>
   </head>
   <body>
+    <div id="canvasWrapper"></div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
       var socket = io();

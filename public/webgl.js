@@ -42,9 +42,12 @@ function init() {
     scene.add( mesh );
 
     renderer = new THREE.WebGLRenderer();
-    renderer.setSize( window.innerWidth, window.innerHeight );
+    renderer.setSize( 1920, 1080 );
 
-    document.body.appendChild( renderer.domElement );
+    var wrapper = document.getElementById('canvasWrapper');
+    renderer.domElement.style.width = '100%';
+    renderer.domElement.style.height = 'auto';
+    wrapper.appendChild( renderer.domElement );
 
     // stats
    statsMs.domElement.style.position = 'absolute';
@@ -53,6 +56,40 @@ function init() {
    statsFps.domElement.style.position = 'absolute';
    statsFps.domElement.style.top = '30px';
    document.body.appendChild( statsFps.domElement );
+}
+
+document.onmousewheel = function (event) {
+  camera.position.z += event.wheelDeltaY * 0.5;
+  if (camera.position < 0) { camera.position.z = 0; } 
+  if (camera.position.z > 8000) { camera.position.z = 8000; }
+};
+
+var oldMouseX = null;
+var oldMouseY = null;
+document.onmousedown = function (evt) {
+  oldMouseX = evt.x;
+  oldMouseY = evt.y;
+}
+document.onmouseup = function () {
+  oldMouseX = null;
+  oldMouseY = null;
+}
+document.onmousemove = function (evt) {
+  if (oldMouseX != null) {
+    var mouseDeltaX = evt.x - oldMouseX;
+    var mouseDeltaY = evt.y - oldMouseY;
+    mesh.rotation.y += mouseDeltaX*0.01;
+    mesh.rotation.x += mouseDeltaY*0.01;
+
+    if (mesh.rotation.y > Math.PI/2) { mesh.rotation.y = Math.PI/2; }
+    if (mesh.rotation.y < -Math.PI/2) { mesh.rotation.y = -Math.PI/2; }
+    
+    if (mesh.rotation.x > Math.PI/2) { mesh.rotation.x = Math.PI/2; }
+    if (mesh.rotation.x < -Math.PI/2) { mesh.rotation.x = -Math.PI/2; }
+
+    oldMouseX = evt.x;
+    oldMouseY = evt.y;
+  }
 }
 
 function animate(chunk) {
@@ -68,7 +105,7 @@ function animate(chunk) {
 		var sad = data.readInt16();
 		var hue = (Math.atan2(dx, dy)/Math.PI+1)/2;
 		var lightness = Math.sqrt(dx*dx + dy*dy)/128;
-		color.setHSL(hue, 1, lightness);
+		color.setHSL(hue, 1, lightness+0.05);
 		colors[i + 0] = color.r;
 		colors[i + 1] = color.g;
 		colors[i + 2] = color.b;
