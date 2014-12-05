@@ -61,16 +61,48 @@ function init() {
 }
 
 /**
- * Object, x, y, width, height
+ * Tracked object should have at least:
+ *  x, y, width, height and general direction + speed.
  */
 var trackedObjects = {};
 
 function animate(chunk) {
 
   /**
-   * Vertices grouped smartly to groups that might be in the same blob
+   * Group vertices by direction / nearbystuff
+   *
+   * NOTE: this might perform pretty badly if there are two/more separate
+   *       blobs with great height side by side on the same level.
+   *
+   * TODO: implement some real 2d blob finding algorithm, instead of this adhoc test
    */
-  var vertexBuckets = {};
+  var vertexBuckets = { };
+  function addVertexToBucket(x, y, z) {
+    // TODO: if some kind of treshold needed for plane selection, round to nearest
+
+    // select main bucket
+    var planeBucket = vertexBuckets[z];
+    if (!planeBucket) {
+      // create main bucket with initial vertex group and add current vertex there
+      vertexBuckets[z] = [[[x,y]]];
+    } else {
+      // find old bucket to put vertex
+      for (var groupIndex = 0; groupIndex < planeBucket.length; groupIndex++) {
+        var group = planeBucket[groupIndex];
+        for (var pointIndex = 0; pointIndex < group.length; pointIndex++) {
+          var point = group[pointIndex];
+          var dx = Math.abs(point[0] - x);
+          var dy = Math.abs(point[1] - y);
+          if (dx+dy < 4) {
+            group.unshift([x,y]);
+            return;
+          }
+        }
+      }
+      // couldn't find bucket where is near enough, create new bucket
+      planeBucket.unshift([[x,y]]);
+    }
+  }
 
   statsMs.begin();
   var data = new DataStream(chunk.data, 0, DataStream.LITTLE_ENDIAN);
@@ -81,19 +113,23 @@ function animate(chunk) {
     var dy = data.readInt8();
     var sad = data.readInt16();
 
+
     var hue = 0;
     var lightness = 0;
+    var directionAndSpeed = 0;
     if (dx || dy) {
       hue = (Math.atan2(dx, dy) / Math.PI + 1) / 2;
       lightness = Math.sqrt(dx * dx + dy * dy) / 128;
       movingVerticesCount++;
+      directionAndSpeed = ((Math.ceil(hue*16)*2) + lightness);
+      addVertexToBucket(vertices[i], vertices[i+1], directionAndSpeed);
     }
 
     color.setHSL(hue, 1, lightness + 0.05);
     colors[i + 0] = color.r;
     colors[i + 1] = color.g;
     colors[i + 2] = color.b;
-    vertices[i + 2] = lightness && ((Math.ceil(hue*16)*2) + lightness) || 0;
+    vertices[i + 2] = directionAndSpeed;
   }
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
