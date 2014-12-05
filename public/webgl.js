@@ -10,14 +10,16 @@ var statsFps = new Stats();
 var statsMs = new Stats();
 statsMs.setMode(1);
 
+var cameraZMax = 1000;
+
 init();
 
 function init() {
 
   scene = new THREE.Scene();
 
-  camera = new THREE.PerspectiveCamera(27, 1920 / 1080, 5, 3000);
-  camera.position.z = 200;
+  camera = new THREE.PerspectiveCamera(10, 1920 / 1080, 5, cameraZMax*2);
+  camera.position.z = cameraZMax;
 
   geometry = new THREE.BufferGeometry();
 
@@ -34,7 +36,7 @@ function init() {
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
 
   material = new THREE.PointCloudMaterial({
-    size: 8,
+    size: 3,
     sizeAttenuation: false,
     vertexColors: THREE.VertexColors
   });
@@ -85,12 +87,12 @@ function animate(chunk) {
  * Mouse controls
  */
 document.onmousewheel = function (event) {
-  camera.position.z += event.wheelDeltaY * 0.1;
+  camera.position.z += event.wheelDeltaY * cameraZMax/2000;
   if (camera.position < 0) {
     camera.position.z = 0;
   }
-  if (camera.position.z > 200) {
-    camera.position.z = 200;
+  if (camera.position.z > cameraZMax) {
+    camera.position.z = cameraZMax;
   }
 };
 
