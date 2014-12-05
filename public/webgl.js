@@ -60,16 +60,35 @@ function init() {
   document.body.appendChild(statsFps.domElement);
 }
 
+/**
+ * Object, x, y, width, height
+ */
+var trackedObjects = {};
+
 function animate(chunk) {
+
+  /**
+   * Vertices grouped smartly to groups that might be in the same blob
+   */
+  var vertexBuckets = {};
+
   statsMs.begin();
   var data = new DataStream(chunk.data, 0, DataStream.LITTLE_ENDIAN);
   var color = new THREE.Color();
+  var movingVerticesCount = 0;
   for (var i = 0; i < pixels * 3; i += 3) {
     var dx = data.readInt8();
     var dy = data.readInt8();
     var sad = data.readInt16();
-    var hue = (Math.atan2(dx, dy) / Math.PI + 1) / 2;
-    var lightness = Math.sqrt(dx * dx + dy * dy) / 128;
+
+    var hue = 0;
+    var lightness = 0;
+    if (dx || dy) {
+      hue = (Math.atan2(dx, dy) / Math.PI + 1) / 2;
+      lightness = Math.sqrt(dx * dx + dy * dy) / 128;
+      movingVerticesCount++;
+    }
+
     color.setHSL(hue, 1, lightness + 0.05);
     colors[i + 0] = color.r;
     colors[i + 1] = color.g;
@@ -81,6 +100,7 @@ function animate(chunk) {
   renderer.render(scene, camera);
   statsMs.end();
   statsFps.update();
+  document.getElementById('movingVertices').textContent = movingVerticesCount;
 }
 
 /**
