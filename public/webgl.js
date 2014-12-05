@@ -6,9 +6,9 @@ var height = Math.floor(1080 / 16) + 1;
 var pixels = width * height;
 var vertices = new Float32Array(pixels * 3);
 var colors = new Float32Array(pixels * 3);
+var statsFps = new Stats();
 var statsMs = new Stats();
 statsMs.setMode(1);
-var statsFps = new Stats();
 
 init();
 
@@ -34,7 +34,7 @@ function init() {
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
 
   material = new THREE.PointCloudMaterial({
-    size: 15,
+    size: 8,
     sizeAttenuation: false,
     vertexColors: THREE.VertexColors
   });
@@ -58,6 +58,32 @@ function init() {
   document.body.appendChild(statsFps.domElement);
 }
 
+function animate(chunk) {
+  statsMs.begin();
+  var data = new DataStream(chunk.data, 0, DataStream.LITTLE_ENDIAN);
+  var color = new THREE.Color();
+  for (var i = 0; i < pixels * 3; i += 3) {
+    var dx = data.readInt8();
+    var dy = data.readInt8();
+    var sad = data.readInt16();
+    var hue = (Math.atan2(dx, dy) / Math.PI + 1) / 2;
+    var lightness = Math.sqrt(dx * dx + dy * dy) / 128;
+    color.setHSL(hue, 1, lightness + 0.05);
+    colors[i + 0] = color.r;
+    colors[i + 1] = color.g;
+    colors[i + 2] = color.b;
+    vertices[i + 2] = lightness && ((Math.ceil(hue*16)*2) + lightness) || 0;
+  }
+  geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
+  geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
+  renderer.render(scene, camera);
+  statsMs.end();
+  statsFps.update();
+}
+
+/**
+ * Mouse controls
+ */
 document.onmousewheel = function (event) {
   camera.position.z += event.wheelDeltaY * 0.1;
   if (camera.position < 0) {
@@ -73,11 +99,11 @@ var oldMouseY = null;
 document.onmousedown = function (evt) {
   oldMouseX = evt.x;
   oldMouseY = evt.y;
-}
+};
 document.onmouseup = function () {
   oldMouseX = null;
   oldMouseY = null;
-}
+};
 document.onmousemove = function (evt) {
   if (oldMouseX != null) {
     var mouseDeltaX = evt.x - oldMouseX;
@@ -102,27 +128,4 @@ document.onmousemove = function (evt) {
     oldMouseX = evt.x;
     oldMouseY = evt.y;
   }
-}
-
-function animate(chunk) {
-  statsMs.begin();
-  var data = new DataStream(chunk.data, 0, DataStream.LITTLE_ENDIAN);
-  var color = new THREE.Color();
-  for (var i = 0; i < pixels * 3; i += 3) {
-    var dx = data.readInt8();
-    var dy = data.readInt8();
-    var sad = data.readInt16();
-    var hue = (Math.atan2(dx, dy) / Math.PI + 1) / 2;
-    var lightness = Math.sqrt(dx * dx + dy * dy) / 128;
-    color.setHSL(hue, 1, lightness + 0.05);
-    colors[i + 0] = color.r;
-    colors[i + 1] = color.g;
-    colors[i + 2] = color.b;
-    vertices[i + 2] = hue*128-64;
-  }
-  geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
-  geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
-  renderer.render(scene, camera);
-  statsMs.end();
-  statsFps.update();
-}
+};
