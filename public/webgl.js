@@ -164,13 +164,13 @@ function animate(chunk) {
   }
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
-  renderer.render(scene, camera);
 
   //
   // Create objects for vertex groups for visualizing found blobs
   //
   visualizeVertexGroups(vertexBuckets);
 
+  renderer.render(scene, camera);
   statsMs.end();
   statsFps.update();
   document.getElementById('movingVertices').textContent = movingVerticesCount;
