@@ -36,8 +36,8 @@ function init() {
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
 
   material = new THREE.PointCloudMaterial({
-    size: 3,
-    sizeAttenuation: false,
+    size: 7,
+    sizeAttenuation: true,
     vertexColors: THREE.VertexColors
   });
   mesh = new THREE.PointCloud(geometry, material);
@@ -177,24 +177,47 @@ function animate(chunk) {
   document.getElementById('groupingInfo').textContent = totalGroups;
 }
 
+lineMaterial = new THREE.LineBasicMaterial( { color: 0x00ff00, opacity: 1, linewidth: 3 } );
+vertexGroupObjects = [];
 function visualizeVertexGroups(buckets) {
-  for (var z in Object.keys(buckets)) {
+  // delete old ones
+  for (wgObjIndex in vertexGroupObjects) {
+    scene.remove(vertexGroupObjects[wgObjIndex]);
+  }
+  vertexGroupObjects = [];
+
+  // create new for every group in plane
+  for (var z in buckets) {
     var plane = buckets[z];
-        
+
+    for (var groupIndex in plane) {
+      var group = plane[groupIndex];
+      var groupBoundingBox = new THREE.Geometry();
+      groupBoundingBox.vertices.push(
+        new THREE.Vector3( group.$minX, group.$minY, z ),
+        new THREE.Vector3( group.$maxX, group.$minY, z ),
+        new THREE.Vector3( group.$maxX, group.$maxY, z ),
+        new THREE.Vector3( group.$minX, group.$maxY, z ),
+        new THREE.Vector3( group.$minX, group.$minY, z )
+      );
+      var line = new THREE.Line( groupBoundingBox, lineMaterial );
+      vertexGroupObjects.push(line);
+      scene.add(line);
+    }
   }
 }
 
 /**
  * Mouse controls
  */
+var cameraAngleY = 0;  // - PI..PI
+var cameraAngleX = 0;  // - PI..PI
+var cameraDistance = cameraZMax;
 document.onmousewheel = function (event) {
-  camera.position.z += event.wheelDeltaY * cameraZMax/2000;
-  if (camera.position < 0) {
-    camera.position.z = 0;
-  }
-  if (camera.position.z > cameraZMax) {
-    camera.position.z = cameraZMax;
-  }
+  cameraDistance += event.wheelDeltaY * cameraZMax/2000;
+  if (cameraDistance < 0) { cameraDistance = 0; }
+  if (cameraDistance > cameraZMax) { cameraDistance = cameraZMax; }
+  updateCamera();
 };
 
 var oldMouseX = null;
@@ -207,28 +230,38 @@ document.onmouseup = function () {
   oldMouseX = null;
   oldMouseY = null;
 };
+
+var zeroPoint = new THREE.Vector3(0,0,0);
+var rotationY = new THREE.Matrix4();
+var rotationX = new THREE.Matrix4();
+var translation = new THREE.Matrix4();
+var positionMatrix = new THREE.Matrix4();
 document.onmousemove = function (evt) {
   if (oldMouseX != null) {
     var mouseDeltaX = evt.x - oldMouseX;
     var mouseDeltaY = evt.y - oldMouseY;
-    mesh.rotation.y += mouseDeltaX * 0.01;
-    mesh.rotation.x += mouseDeltaY * 0.01;
+    cameraAngleY = cameraAngleY -mouseDeltaX*0.01;
+    cameraAngleX = cameraAngleX -mouseDeltaY*0.01;
 
-    if (mesh.rotation.y > Math.PI / 2) {
-      mesh.rotation.y = Math.PI / 2;
-    }
-    if (mesh.rotation.y < -Math.PI / 2) {
-      mesh.rotation.y = -Math.PI / 2;
-    }
-
-    if (mesh.rotation.x > Math.PI / 2) {
-      mesh.rotation.x = Math.PI / 2;
-    }
-    if (mesh.rotation.x < -Math.PI / 2) {
-      mesh.rotation.x = -Math.PI / 2;
-    }
+    if (cameraAngleY > Math.PI / 2) { cameraAngleY = Math.PI / 2; }
+    if (cameraAngleY.y < -Math.PI / 2) { cameraAngleY = -Math.PI / 2; }
+    if (cameraAngleX > Math.PI / 2) { cameraAngleX = Math.PI / 2; }
+    if (cameraAngleX < -Math.PI / 2) { cameraAngleX = -Math.PI / 2; }
+    updateCamera();
 
     oldMouseX = evt.x;
     oldMouseY = evt.y;
   }
 };
+
+// move camera to new position
+function updateCamera() {
+  rotationY.makeRotationY(cameraAngleY);
+  rotationX.makeRotationX(cameraAngleX);
+  translation.makeTranslation(0, 0, cameraDistance);
+  positionMatrix.multiplyMatrices( rotationY, rotationX );
+  positionMatrix.multiply( translation );
+  camera.matrix.identity();
+  camera.applyMatrix(positionMatrix);
+  camera.lookAt(zeroPoint);
+}
