@@ -74,35 +74,66 @@ function animate(chunk) {
    * NOTE: this might perform pretty badly if there are two/more separate
    *       blobs with great height side by side on the same level.
    *
-   * TODO: implement some real 2d blob finding algorithm, instead of this adhoc test
+   * TODO: maybe implement some real 2d blob finding algorithm, instead of this adhoc thing
    */
   var vertexBuckets = { };
-  function addVertexToBucket(x, y, z) {
-    // TODO: if some kind of treshold needed for plane selection, round to nearest
+  var totalGroups = 0;
+  function createNewGroup(x,y) {
+    totalGroups++;
+    var newGroup =[[x,y]];
+    newGroup.$minX = x;
+    newGroup.$minY = y;
+    newGroup.$maxX = x;
+    newGroup.$maxY = y;
+    return newGroup;
+  }
 
+  /**
+   * Add vertex to group if near enough of groups bounding box.
+   *
+   * @return {Boolean} true if vertex was added
+   */
+  function addToGroup(group, x,y) {
+    // add x,y to group if it is inside boundingbox widened by treshold (4)
+    if (x > group.$minX-4 &&
+        x < group.$maxX+4 &&
+        y > group.$minY-4 &&
+        y < group.$maxY+4) {
+      group.push([x,y]);
+      group.$maxY = y; // we go through vertices in order -height/2 .. height/2 so no need to update $minY
+      group.$minX = Math.min(x, group.$minX);
+      group.$maxX = Math.max(x, group.$maxX);
+      return true;
+    }
+    return false;
+  }
+
+  function addVertexToBucket(x, y, z) {
     // select main bucket
     var planeBucket = vertexBuckets[z];
     if (!planeBucket) {
-      // create main bucket with initial vertex group and add current vertex there
-      vertexBuckets[z] = [[[x,y]]];
+      // create main bucket with initial vertex group
+      vertexBuckets[z] = [createNewGroup(x, y)];
     } else {
-      // find old bucket to put vertex
+      // find old vertex group to put this vertex
+      var groupFound = false;
       for (var groupIndex = 0; groupIndex < planeBucket.length; groupIndex++) {
         var group = planeBucket[groupIndex];
-        for (var pointIndex = 0; pointIndex < group.length; pointIndex++) {
-          var point = group[pointIndex];
-          var dx = Math.abs(point[0] - x);
-          var dy = Math.abs(point[1] - y);
-          if (dx+dy < 4) {
-            group.unshift([x,y]);
-            return;
-          }
+        if (addToGroup(group, x, y)) {
+          groupFound = true;
+          break;
         }
       }
       // couldn't find bucket where is near enough, create new bucket
-      planeBucket.unshift([[x,y]]);
+      if (!groupFound) {
+        planeBucket.unshift(createNewGroup(x, y));
+      }
     }
   }
+
+  //
+  // Read frame data, calculate direction and group vertices to kind of blobs
+  //
 
   statsMs.begin();
   var data = new DataStream(chunk.data, 0, DataStream.LITTLE_ENDIAN);
@@ -134,9 +165,23 @@ function animate(chunk) {
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
   renderer.render(scene, camera);
+
+  //
+  // Create objects for vertex groups for visualizing found blobs
+  //
+  visualizeVertexGroups(vertexBuckets);
+
   statsMs.end();
   statsFps.update();
   document.getElementById('movingVertices').textContent = movingVerticesCount;
+  document.getElementById('groupingInfo').textContent = totalGroups;
+}
+
+function visualizeVertexGroups(buckets) {
+  for (var z in Object.keys(buckets)) {
+    var plane = buckets[z];
+        
+  }
 }
 
 /**
