@@ -100,15 +100,22 @@ function animate(chunk) {
         y > group.$minY-4 &&
         y < group.$maxY+4) {
       group.push([x,y]);
-      group.$maxY = y; // we go through vertices in order -height/2 .. height/2 so no need to update $minY
       group.$minX = Math.min(x, group.$minX);
       group.$maxX = Math.max(x, group.$maxX);
+      // we go through vertices in order height/2 .. -height/2 so no need to update $minY
+      group.$minY = y;
       return true;
     }
+    // TODO: here we could have third return
+    //       value for the case, where this this group
+    //       may never have more vertices
+    //       (because minY is too far away from y)
+    //       would make worst case perf a lot better
     return false;
   }
 
   function addVertexToBucket(x, y, z) {
+    z = z.toFixed(3); // take 3 decimals
     // select main bucket
     var planeBucket = vertexBuckets[z];
     if (!planeBucket) {
@@ -152,6 +159,10 @@ function animate(chunk) {
       hue = (Math.atan2(dx, dy) / Math.PI + 1) / 2;
       lightness = Math.sqrt(dx * dx + dy * dy) / 128;
       movingVerticesCount++;
+
+      // directionAndSpeed format is <direction angle>.<speed>
+      // to be able to control threshold to values which
+      // goes to same bucket round upper or lower part of directionAndSpeed
       directionAndSpeed = ((Math.ceil(hue*16)*2) + lightness);
       addVertexToBucket(vertices[i], vertices[i+1], directionAndSpeed);
     }
@@ -166,18 +177,37 @@ function animate(chunk) {
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
   //
+  // Merge nearby groups in plane which were splitted, because algorithm scans
+  // data line by line and groups united after split already happened
+  //
+
+  //
   // Create objects for vertex groups for visualizing found blobs
   //
   visualizeVertexGroups(vertexBuckets);
 
+  //
+  // Add statistics information
+  //
   renderer.render(scene, camera);
   statsMs.end();
   statsFps.update();
   document.getElementById('movingVertices').textContent = movingVerticesCount;
-  document.getElementById('groupingInfo').textContent = totalGroups;
+
+  // generate group info strings
+  var groupInfo = Object.keys(vertexBuckets); // allocate array of the same length with vertexBuckets
+  var i = 0;
+  for (plane in vertexBuckets) {
+    var planeGroups = vertexBuckets[plane];
+    groupInfo[i] = [
+      '<br/><span class="infoLabel">Bucket / group count</spane>: ',
+      plane, ' / ', planeGroups.length].join('');
+    i++;
+  }
+  document.getElementById('groupingInfo').innerHTML = groupInfo.join('');
 }
 
-lineMaterial = new THREE.LineBasicMaterial( { color: 0x00ff00, opacity: 1, linewidth: 3 } );
+lineMaterial = new THREE.LineBasicMaterial( { color: 0xff0000, opacity: 0.7, linewidth: 10 } );
 vertexGroupObjects = [];
 function visualizeVertexGroups(buckets) {
   // delete old ones

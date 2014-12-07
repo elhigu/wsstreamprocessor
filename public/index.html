@@ -36,13 +36,17 @@
         line-height: 15px;
         text-align: left;
       }
+
+      .info-label {
+        width: 20px;
+      }
     </style>
   </head>
   <body>
     <div id="canvasWrapper"></div>
     <div id="statsAndControls">
-      Moving vertices: <span id="movingVertices"></span><br/>
-      Grouping info: <span id="groupingInfo"></span>
+      <span class="info-label">Moving vertices</span>: <span id="movingVertices"></span><br/>
+      <span class="info-label">Grouping info</span>: <span id="groupingInfo"></span>
     </div>
     <script src="/socket.io/socket.io.js"></script>
     <script>
