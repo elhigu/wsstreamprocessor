@@ -187,6 +187,10 @@ function animate(chunk) {
   visualizeVertexGroups(vertexBuckets);
 
   //
+  // TODO: Add here object tracking + their visualization
+  //
+
+  //
   // Add statistics information
   //
   renderer.render(scene, camera);
@@ -195,17 +199,21 @@ function animate(chunk) {
   document.getElementById('movingVertices').textContent = movingVerticesCount;
 
   // generate group info strings
-  var groupInfo = Object.keys(vertexBuckets); // allocate array of the same length with vertexBuckets
+  var groupInfo = [];
   var i = 0;
   for (plane in vertexBuckets) {
     var planeGroups = vertexBuckets[plane];
-    groupInfo[i] = [
+    groupInfo.push([
       '<br/><span class="infoLabel">Bucket / group count</spane>: ',
-      plane, ' / ', planeGroups.length].join('');
+      plane, ' / ', planeGroups.length].join(''));
     i++;
   }
   document.getElementById('groupingInfo').innerHTML = groupInfo.join('');
 }
+
+//
+// Create red rectangles around found groups...
+//
 
 lineMaterial = new THREE.LineBasicMaterial( { color: 0xff0000, opacity: 0.7, linewidth: 10 } );
 vertexGroupObjects = [];
@@ -222,6 +230,7 @@ function visualizeVertexGroups(buckets) {
 
     for (var groupIndex in plane) {
       var group = plane[groupIndex];
+      if (group.length === 1) { continue; }
       var groupBoundingBox = new THREE.Geometry();
       groupBoundingBox.vertices.push(
         new THREE.Vector3( group.$minX, group.$minY, z ),
@@ -294,4 +303,5 @@ function updateCamera() {
   camera.matrix.identity();
   camera.applyMatrix(positionMatrix);
   camera.lookAt(zeroPoint);
+  renderer.render(scene, camera); // render frame
 }
