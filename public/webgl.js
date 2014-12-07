@@ -80,7 +80,7 @@ function animate(chunk) {
   var totalGroups = 0;
   function createNewGroup(x,y) {
     totalGroups++;
-    var newGroup =[[x,y]];
+    var newGroup = [[x,y]];
     newGroup.$minX = x;
     newGroup.$minY = y;
     newGroup.$maxX = x;
@@ -91,7 +91,10 @@ function animate(chunk) {
   /**
    * Add vertex to group if near enough of groups bounding box.
    *
-   * @return {Boolean} true if vertex was added
+   * @return {Number}
+   *   1 if vertex was added,
+   *   0 if vertex not near enough,
+   *   -1 if no future vertices may be near enough
    */
   function addToGroup(group, x,y) {
     // add x,y to group if it is inside boundingbox widened by treshold (4)
@@ -104,14 +107,15 @@ function animate(chunk) {
       group.$maxX = Math.max(x, group.$maxX);
       // we go through vertices in order height/2 .. -height/2 so no need to update $minY
       group.$minY = y;
-      return true;
+      return 1;
     }
-    // TODO: here we could have third return
-    //       value for the case, where this this group
-    //       may never have more vertices
-    //       (because minY is too far away from y)
-    //       would make worst case perf a lot better
-    return false;
+
+    // all future y coordinates are too far away from this group
+    if (y < group.$minY-4) {
+      return -1;
+    }
+
+    return 0;
   }
 
   function addVertexToBucket(x, y, z) {
@@ -120,15 +124,23 @@ function animate(chunk) {
     var planeBucket = vertexBuckets[z];
     if (!planeBucket) {
       // create main bucket with initial vertex group
-      vertexBuckets[z] = [createNewGroup(x, y)];
+      var planeBucket = [createNewGroup(x, y)];
+      planeBucket.$finishedGroups = [];
+      vertexBuckets[z] = planeBucket;
+
     } else {
       // find old vertex group to put this vertex
       var groupFound = false;
       for (var groupIndex = 0; groupIndex < planeBucket.length; groupIndex++) {
         var group = planeBucket[groupIndex];
-        if (addToGroup(group, x, y)) {
+        var result = addToGroup(group, x, y);
+        if (result === 1) {
           groupFound = true;
           break;
+        } else if (result === -1) {
+          planeBucket.$finishedGroups.push(group);
+          planeBucket.splice(groupIndex,1);
+          groupIndex--;
         }
       }
       // couldn't find bucket where is near enough, create new bucket
@@ -175,6 +187,12 @@ function animate(chunk) {
   }
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+  // merge stuff from finished groups and non finished groups
+  for (plane in vertexBuckets) {
+    var oldBucket = vertexBuckets[plane];
+    vertexBuckets[plane] = oldBucket.concat(oldBucket.$finishedGroups);
+  }
 
   //
   // Merge nearby groups in plane which were splitted, because algorithm scans
@@ -227,7 +245,6 @@ function visualizeVertexGroups(buckets) {
   // create new for every group in plane
   for (var z in buckets) {
     var plane = buckets[z];
-
     for (var groupIndex in plane) {
       var group = plane[groupIndex];
       if (group.length === 1) { continue; }

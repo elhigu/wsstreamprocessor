@@ -7,7 +7,7 @@ var height = Math.floor(1080/16)+1;
 var pixels = width*height;
 var frames = [];
 var frameCount = 360;
-var fps = 5;
+var fps = 10;
 
 for (var i = 0; i < frameCount; i++) {
   var frame = new Buffer(pixels*4);
@@ -20,6 +20,11 @@ for (var i = 0; i < frameCount; i++) {
 			var dy = 0;
 	  	var sad = Math.floor(Math.random()*512);
 
+			//
+			// Max reallife changes seen in camera was ~ 4000 changes when camera is
+			// spanning, however there changes creates usually single / few groups
+			//
+
 			// create worst case performance test data
 			// 16 planes, which each has max number of single vertex groups
 			var floorX = Math.floor(x);
@@ -29,20 +34,28 @@ for (var i = 0; i < frameCount; i++) {
 			if ((floorX+0)%4 == 0 && (floorY+2)%4 == 0) { dx = 25; dy = 55; }
 			if ((floorX+0)%4 == 0 && (floorY+3)%4 == 0) { dx = 35; dy = 44; }
 
-			if ((floorX+1)%4 == 0 && (floorY+0)%4 == 0) { dx = 45; dy = 33; }
-			if ((floorX+1)%4 == 0 && (floorY+1)%4 == 0) { dx = 55; dy = 22; }
-			if ((floorX+1)%4 == 0 && (floorY+2)%4 == 0) { dx = 65; dy = 11; }
-			if ((floorX+1)%4 == 0 && (floorY+3)%4 == 0) { dx = 75; dy = 0; }
+			//
+			// Uncomment these to get crazy amount of blobs..
+			//
 
-			if ((floorX+2)%4 == 0 && (floorY+0)%4 == 0) { dx = 80; dy = 10; }
-			if ((floorX+2)%4 == 0 && (floorY+1)%4 == 0) { dx = 70; dy = 20; }
-			if ((floorX+2)%4 == 0 && (floorY+2)%4 == 0) { dx = 60; dy = 30; }
-			if ((floorX+2)%4 == 0 && (floorY+3)%4 == 0) { dx = 50; dy = 40; }
+			//if ((floorX+1)%4 == 0 && (floorY+0)%4 == 0) { dx = 45; dy = 33; }
+			//if ((floorX+1)%4 == 0 && (floorY+1)%4 == 0) { dx = 55; dy = 22; }
+			//if ((floorX+1)%4 == 0 && (floorY+2)%4 == 0) { dx = 65; dy = 11; }
+			//if ((floorX+1)%4 == 0 && (floorY+3)%4 == 0) { dx = 75; dy = 0; }
 
-			if ((floorX+3)%4 == 0 && (floorY+0)%4 == 0) { dx = 40; dy = 50; }
-			if ((floorX+3)%4 == 0 && (floorY+1)%4 == 0) { dx = 30; dy = 60; }
-			if ((floorX+3)%4 == 0 && (floorY+2)%4 == 0) { dx = 20; dy = 70; }
-			if ((floorX+3)%4 == 0 && (floorY+3)%4 == 0) { dx = 10; dy = 80; }
+			//if ((floorX+2)%4 == 0 && (floorY+0)%4 == 0) { dx = 80; dy = 10; }
+			//if ((floorX+2)%4 == 0 && (floorY+1)%4 == 0) { dx = 70; dy = 20; }
+			//if ((floorX+2)%4 == 0 && (floorY+2)%4 == 0) { dx = 60; dy = 30; }
+			//if ((floorX+2)%4 == 0 && (floorY+3)%4 == 0) { dx = 50; dy = 40; }
+
+			//if ((floorX+3)%4 == 0 && (floorY+0)%4 == 0) { dx = 40; dy = 50; }
+			//if ((floorX+3)%4 == 0 && (floorY+1)%4 == 0) { dx = 30; dy = 60; }
+			//if ((floorX+3)%4 == 0 && (floorY+2)%4 == 0) { dx = 20; dy = 70; }
+			//if ((floorX+3)%4 == 0 && (floorY+3)%4 == 0) { dx = 10; dy = 80; }
+
+			//
+			// Create some moving objects
+			//
 
 			// TODO: refactor box creator to generate more boxes from array of parameters
 			var boxX = Math.cos(i/360*(Math.PI*2)) * 30 + 60;
