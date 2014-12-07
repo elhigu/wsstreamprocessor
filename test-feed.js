@@ -7,7 +7,7 @@ var height = Math.floor(1080/16)+1;
 var pixels = width*height;
 var frames = [];
 var frameCount = 360;
-var fps = 10;
+var fps = 25;
 
 for (var i = 0; i < frameCount; i++) {
   var frame = new Buffer(pixels*4);

@@ -88,6 +88,15 @@ function animate(chunk) {
     return newGroup;
   }
 
+  function isInsideGroup(x,y,group) {
+    return (
+      x > group.$minX-4 &&
+      x < group.$maxX+4 &&
+      y > group.$minY-4 &&
+      y < group.$maxY+4
+    );
+  }
+
   /**
    * Add vertex to group if near enough of groups bounding box.
    *
@@ -98,10 +107,7 @@ function animate(chunk) {
    */
   function addToGroup(group, x,y) {
     // add x,y to group if it is inside boundingbox widened by treshold (4)
-    if (x > group.$minX-4 &&
-        x < group.$maxX+4 &&
-        y > group.$minY-4 &&
-        y < group.$maxY+4) {
+    if (isInsideGroup(x,y,group)) {
       group.push([x,y]);
       group.$minX = Math.min(x, group.$minX);
       group.$maxX = Math.max(x, group.$maxX);
@@ -118,6 +124,9 @@ function animate(chunk) {
     return 0;
   }
 
+  /**
+   * Adds vertex to correct bucket or create new bucket for it.
+   */
   function addVertexToBucket(x, y, z) {
     z = z.toFixed(3); // take 3 decimals
     // select main bucket
@@ -188,21 +197,70 @@ function animate(chunk) {
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-  // merge stuff from finished groups and non finished groups
-  for (plane in vertexBuckets) {
-    var oldBucket = vertexBuckets[plane];
-    vertexBuckets[plane] = oldBucket.concat(oldBucket.$finishedGroups);
-  }
-
   //
   // Merge nearby groups in plane which were splitted, because algorithm scans
   // data line by line and groups united after split already happened
   //
+  // Also merge $finishedGroups again with all groups.
+  //
+
+  for (plane in vertexBuckets) {
+    var oldGroupPlane = vertexBuckets[plane];
+
+    // filter out groups of less than 4 vertices
+    var newGroupPlane = oldGroupPlane.concat(oldGroupPlane.$finishedGroups);
+    for (var groupIndex = 0; groupIndex < newGroupPlane.length; groupIndex++) {
+      if (newGroupPlane[groupIndex].length < 4) {
+        newGroupPlane.splice(groupIndex,1);
+        groupIndex--;
+      }
+    }
+
+    //
+    // Brute force merge of nearby groups to bigger ones...
+    //
+    for (var i1 = 0; i1 < newGroupPlane.length-1; i1++) {
+      var group1 = newGroupPlane[i1];
+      for (var i2 = i1+1; i2 < newGroupPlane.length; i2++) {
+        var group2 = newGroupPlane[i2];
+        // if all future groups are too far away give up already
+        if (group1.$maxY < group2.$minY-4) { break; }
+
+        // if any of group corners is inside the other + threshold
+        if (
+          isInsideGroup(group1.$minX, group1.$minY, group2) ||
+          isInsideGroup(group1.$maxX, group1.$minY, group2) ||
+          isInsideGroup(group1.$minX, group1.$maxY, group2) ||
+          isInsideGroup(group1.$maxX, group1.$maxY, group2)
+        ) {
+
+          // merge group
+          var newGroup = group1.concat(group2);
+          newGroup.$minX = Math.min(group1.$minX, group2.$minX);
+          newGroup.$maxX = Math.max(group1.$maxX, group2.$maxX);
+          newGroup.$minY = Math.min(group1.$minY, group2.$minY);
+          newGroup.$maxY = Math.max(group1.$maxY, group2.$maxY);
+          newGroupPlane[i1] = newGroup;
+
+          // delete ingested group
+          newGroupPlane.splice(i2,1);
+
+          // run merge for new group instead of continuing to next one
+          i1--;
+          break;
+        }
+      }
+    }
+
+    vertexBuckets[plane] = newGroupPlane;
+  }
 
   //
   // Create objects for vertex groups for visualizing found blobs
   //
   visualizeVertexGroups(vertexBuckets);
+
+  // ------------------------------- END OF VERTEX GROUP DETECTION -----------------------------------
 
   //
   // TODO: Add here object tracking + their visualization
