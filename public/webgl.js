@@ -204,6 +204,7 @@ function animate(chunk) {
   // Also merge $finishedGroups again with all groups.
   //
 
+  var filteredVertexBuckets = {};
   for (plane in vertexBuckets) {
     var oldGroupPlane = vertexBuckets[plane];
 
@@ -252,8 +253,11 @@ function animate(chunk) {
       }
     }
 
-    vertexBuckets[plane] = newGroupPlane;
+    if (newGroupPlane.length > 0) {
+      filteredVertexBuckets[plane] = newGroupPlane;
+    }
   }
+  vertexBuckets = filteredVertexBuckets;
 
   //
   // Create objects for vertex groups for visualizing found blobs
@@ -276,13 +280,13 @@ function animate(chunk) {
 
   // generate group info strings
   var groupInfo = [];
-  var i = 0;
   for (plane in vertexBuckets) {
     var planeGroups = vertexBuckets[plane];
-    groupInfo.push([
-      '<br/><span class="infoLabel">Bucket / group count</spane>: ',
-      plane, ' / ', planeGroups.length].join(''));
-    i++;
+    if (planeGroups.length > 0) {
+      groupInfo.push([
+        '<br/><span class="infoLabel">Bucket / group count</spane>: ',
+        plane, ' / ', planeGroups.length].join(''));
+    }
   }
   document.getElementById('groupingInfo').innerHTML = groupInfo.join('');
 }
