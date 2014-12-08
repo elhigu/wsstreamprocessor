@@ -1,4 +1,4 @@
-var scene, camera, renderer;
+var scene, camera, renderer, composer;
 var geometry, material, mesh;
 
 var width = Math.floor(1920 / 16) + 1;
@@ -270,10 +270,11 @@ function animate(chunk) {
   // TODO: Add here object tracking + their visualization
   //
 
+  render();
+
   //
   // Add statistics information
   //
-  renderer.render(scene, camera);
   statsMs.end();
   statsFps.update();
   document.getElementById('movingVertices').textContent = movingVerticesCount;
@@ -295,7 +296,15 @@ function animate(chunk) {
 // Create red rectangles around found groups...
 //
 
-lineMaterial = new THREE.LineBasicMaterial( { color: 0xff0000, opacity: 0.7, linewidth: 10 } );
+lineMaterial = new THREE.LineBasicMaterial( {
+  color: 0xff0000,
+  opacity: 0.7,
+  linewidth: 10,
+  depthWrite: false,
+  depthTest: false,
+  transparent: true
+} );
+
 vertexGroupObjects = [];
 function visualizeVertexGroups(buckets) {
   // delete old ones
@@ -382,5 +391,9 @@ function updateCamera() {
   camera.matrix.identity();
   camera.applyMatrix(positionMatrix);
   camera.lookAt(zeroPoint);
-  renderer.render(scene, camera); // render frame
+  render();
+}
+
+function render() {
+  renderer.render( scene, camera );
 }

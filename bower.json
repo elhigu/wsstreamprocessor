@@ -1,0 +1,34 @@
+{
+  "name": "raspicamobjtracker",
+  "version": "0.0.0",
+  "authors": [
+    "Mikael Lepistö <mikael.lepisto@vincit.fi>"
+  ],
+  "description": "Object tracker that reads motion vectors from RaspiCam and interprets world according to them.",
+  "main": "server.js",
+  "keywords": [
+    "motion",
+    "motion-vector",
+    "raspi",
+    "raspberrypi",
+    "camera",
+    "object-tracking",
+    "raspicam",
+    "computervision",
+    "cv"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "public/lib",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "threejs": "*",
+    "stats.js": "*",
+    "threejs-examples": "*"
+  }
+}

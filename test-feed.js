@@ -11,7 +11,7 @@ var fps = 25;
 
 for (var i = 0; i < frameCount; i++) {
   var frame = new Buffer(pixels*4);
-  frames.push(frame)
+  frames.push(frame);
   for (var y = 0; y < height; y++) {
 	  for (var x = 0; x < width; x++) {
 	  	var offset = y*width+x;
