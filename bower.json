@@ -27,7 +27,7 @@
     "tests"
   ],
   "dependencies": {
-    "threejs": "*",
+    "threejs-build": "*",
     "stats.js": "*",
     "threejs-examples": "*"
   }
