@@ -184,15 +184,15 @@ function animate(chunk) {
       // directionAndSpeed format is <direction angle>.<speed>
       // to be able to control threshold to values which
       // goes to same bucket round upper or lower part of directionAndSpeed
-      directionAndSpeed = ((Math.ceil(hue*16)*2) + lightness);
-      addVertexToBucket(vertices[i], vertices[i+1], directionAndSpeed);
+      planeGroup = (Math.round(hue*10)*10) + Math.round(lightness*10);
+      addVertexToBucket(vertices[i], vertices[i+1], planeGroup);
     }
 
     color.setHSL(hue, 1, lightness + 0.05);
     colors[i + 0] = color.r;
     colors[i + 1] = color.g;
     colors[i + 2] = color.b;
-    vertices[i + 2] = directionAndSpeed;
+    vertices[i + 2] = Math.round(hue*80) + lightness;
   }
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -257,6 +257,7 @@ function animate(chunk) {
       filteredVertexBuckets[plane] = newGroupPlane;
     }
   }
+
   vertexBuckets = filteredVertexBuckets;
 
   //
@@ -269,6 +270,11 @@ function animate(chunk) {
   //
   // TODO: Add here object tracking + their visualization
   //
+  // The algorithm:
+  //
+  // 1. Read some internets...
+  //
+
 
   render();
 

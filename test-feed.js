@@ -29,29 +29,29 @@ for (var i = 0; i < frameCount; i++) {
 			// 16 planes, which each has max number of single vertex groups
 			var floorX = Math.floor(x);
 			var floorY = Math.floor(y);
-			if ((floorX+0)%4 == 0 && (floorY+0)%4 == 0) { dx = 5; dy = 77; }
-			if ((floorX+0)%4 == 0 && (floorY+1)%4 == 0) { dx = 15; dy = 66; }
-			if ((floorX+0)%4 == 0 && (floorY+2)%4 == 0) { dx = 25; dy = 55; }
-			if ((floorX+0)%4 == 0 && (floorY+3)%4 == 0) { dx = 35; dy = 44; }
+			if ((floorX+0)%4 == 0 && (floorY+0)%4 == 0) { dx = 0; dy = 10; }
+			if ((floorX+0)%4 == 0 && (floorY+1)%4 == 0) { dx = 10; dy = 0; }
+			if ((floorX+0)%4 == 0 && (floorY+2)%4 == 0) { dx = 0; dy = -10; }
+			if ((floorX+0)%4 == 0 && (floorY+3)%4 == 0) { dx = -10; dy = 0; }
 
 			//
 			// Uncomment these to get crazy amount of blobs..
 			//
 
-			//if ((floorX+1)%4 == 0 && (floorY+0)%4 == 0) { dx = 45; dy = 33; }
-			//if ((floorX+1)%4 == 0 && (floorY+1)%4 == 0) { dx = 55; dy = 22; }
-			//if ((floorX+1)%4 == 0 && (floorY+2)%4 == 0) { dx = 65; dy = 11; }
-			//if ((floorX+1)%4 == 0 && (floorY+3)%4 == 0) { dx = 75; dy = 0; }
+			//if ((floorX+1)%4 == 0 && (floorY+0)%4 == 0) { dx = 10; dy = 10; }
+			//if ((floorX+1)%4 == 0 && (floorY+1)%4 == 0) { dx = -10; dy = 10; }
+			//if ((floorX+1)%4 == 0 && (floorY+2)%4 == 0) { dx = 10; dy = -10; }
+			//if ((floorX+1)%4 == 0 && (floorY+3)%4 == 0) { dx = -10; dy = -10; }
 
-			//if ((floorX+2)%4 == 0 && (floorY+0)%4 == 0) { dx = 80; dy = 10; }
-			//if ((floorX+2)%4 == 0 && (floorY+1)%4 == 0) { dx = 70; dy = 20; }
-			//if ((floorX+2)%4 == 0 && (floorY+2)%4 == 0) { dx = 60; dy = 30; }
-			//if ((floorX+2)%4 == 0 && (floorY+3)%4 == 0) { dx = 50; dy = 40; }
+			//if ((floorX+2)%4 == 0 && (floorY+0)%4 == 0) { dx = 0; dy = 50; }
+			//if ((floorX+2)%4 == 0 && (floorY+1)%4 == 0) { dx = 50; dy = 0; }
+			//if ((floorX+2)%4 == 0 && (floorY+2)%4 == 0) { dx = 0; dy = -50; }
+			//if ((floorX+2)%4 == 0 && (floorY+3)%4 == 0) { dx = -50; dy = 0; }
 
-			//if ((floorX+3)%4 == 0 && (floorY+0)%4 == 0) { dx = 40; dy = 50; }
-			//if ((floorX+3)%4 == 0 && (floorY+1)%4 == 0) { dx = 30; dy = 60; }
-			//if ((floorX+3)%4 == 0 && (floorY+2)%4 == 0) { dx = 20; dy = 70; }
-			//if ((floorX+3)%4 == 0 && (floorY+3)%4 == 0) { dx = 10; dy = 80; }
+			//if ((floorX+3)%4 == 0 && (floorY+0)%4 == 0) { dx = 80; dy = 80; }
+			//if ((floorX+3)%4 == 0 && (floorY+1)%4 == 0) { dx = -80; dy = 80; }
+			//if ((floorX+3)%4 == 0 && (floorY+2)%4 == 0) { dx = 80; dy = -80; }
+			//if ((floorX+3)%4 == 0 && (floorY+3)%4 == 0) { dx = -80; dy = -80; }
 
 			//
 			// Create some moving objects
