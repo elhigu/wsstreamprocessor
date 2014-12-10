@@ -66,15 +66,15 @@ function init() {
  */
 var trackedObjects = {};
 
+// when need more power, preallocate here 121*68 arrays for vertex info
+var vertexPool = [];
+// and 121*68 arrays for vertex groups
+ var vertexGroupPool = [];
+
 function animate(chunk) {
 
   /**
    * Group vertices by direction / nearbystuff
-   *
-   * NOTE: this might perform pretty badly if there are two/more separate
-   *       blobs with great height side by side on the same level.
-   *
-   * TODO: maybe implement some real 2d blob finding algorithm, instead of this adhoc thing
    */
   var vertexBuckets = { };
   var totalGroups = 0;
@@ -125,11 +125,17 @@ function animate(chunk) {
   }
 
   /**
-   * Adds vertex to correct bucket or create new bucket for it.
+   * Adds vertex to correct 2d group in certain position of z-plane.
+   *
+   * @todo Use data from dx, dy, hue and lightness to do grouping planes smarter
+   *       one could e.g. to group first at some too fine grained level
+   *       and in the end check if certain levels are near enough be and merge
+   *       those levels together (this would be kind of analogous of adding
+   *       1 or 2 dimensions more to current 2D grouping)
+   *       @see comment after merging groups in plane
+   *
    */
-  function addVertexToBucket(x, y, z) {
-    z = z.toFixed(3); // take 3 decimals
-    // select main bucket
+  function addVertexTo2dGroup(x, y, z, dx, dy, hue, lightness) {
     var planeBucket = vertexBuckets[z];
     if (!planeBucket) {
       // create main bucket with initial vertex group
@@ -175,24 +181,21 @@ function animate(chunk) {
 
     var hue = 0;
     var lightness = 0;
-    var directionAndSpeed = 0;
+    var z = 0;
     if (dx || dy) {
       hue = (Math.atan2(dx, dy) / Math.PI + 1) / 2;
       lightness = Math.sqrt(dx * dx + dy * dy) / 128;
       movingVerticesCount++;
-
-      // directionAndSpeed format is <direction angle>.<speed>
-      // to be able to control threshold to values which
-      // goes to same bucket round upper or lower part of directionAndSpeed
-      planeGroup = (Math.round(hue*10)*10) + Math.round(lightness*10);
-      addVertexToBucket(vertices[i], vertices[i+1], planeGroup);
+      z = hue*10*10 + lightness*10;
+      roundZ = (Math.round(hue*10)*10) + Math.round(lightness*10);
+      addVertexTo2dGroup(vertices[i], vertices[i+1], roundZ, dx, dy);
     }
 
     color.setHSL(hue, 1, lightness + 0.05);
     colors[i + 0] = color.r;
     colors[i + 1] = color.g;
     colors[i + 2] = color.b;
-    vertices[i + 2] = Math.round(hue*80) + lightness;
+    vertices[i + 2] = z;
   }
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -253,8 +256,14 @@ function animate(chunk) {
       }
     }
 
+    //
+    // TODO: here we could do actually 3d/4d grouping and add direction and speed to groups
+    // TODO: after this there would not be any planes or 2d groups anymore, but just 3d or 4d groups
+
     if (newGroupPlane.length > 0) {
       filteredVertexBuckets[plane] = newGroupPlane;
+      // TODO: calculate some average vectors for vertices in group
+      // TODO: calculate density on group
     }
   }
 
@@ -377,7 +386,7 @@ document.onmousemove = function (evt) {
     cameraAngleX = cameraAngleX -mouseDeltaY*0.01;
 
     if (cameraAngleY > Math.PI / 2) { cameraAngleY = Math.PI / 2; }
-    if (cameraAngleY.y < -Math.PI / 2) { cameraAngleY = -Math.PI / 2; }
+    if (cameraAngleY < -Math.PI / 2) { cameraAngleY = -Math.PI / 2; }
     if (cameraAngleX > Math.PI / 2) { cameraAngleX = Math.PI / 2; }
     if (cameraAngleX < -Math.PI / 2) { cameraAngleX = -Math.PI / 2; }
     updateCamera();
