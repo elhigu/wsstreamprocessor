@@ -6,6 +6,7 @@ var height = Math.floor(1080 / 16) + 1;
 var pixels = width * height;
 var vertices = new Float32Array(pixels * 3);
 var colors = new Float32Array(pixels * 3);
+var vertexObjs = [];
 var statsFps = new Stats();
 var statsMs = new Stats();
 statsMs.setMode(1);
@@ -29,6 +30,13 @@ function init() {
       vertices[offset + 0] = x - width / 2;
       vertices[offset + 1] = (height - y) - height / 2;
       vertices[offset + 2] = 0;
+      vertexObjs.push({
+        x: vertices[offset + 0],
+        y: vertices[offset + 1],
+        dx: 0,
+        dy: 0,
+        direction: 0, length: 0
+      });
     }
   }
 
@@ -78,13 +86,13 @@ function animate(chunk) {
    */
   var vertexBuckets = { };
   var totalGroups = 0;
-  function createNewGroup(x,y) {
+  function createNewGroup(vertexObj) {
     totalGroups++;
-    var newGroup = [[x,y]];
-    newGroup.$minX = x;
-    newGroup.$minY = y;
-    newGroup.$maxX = x;
-    newGroup.$maxY = y;
+    var newGroup = [vertexObj];
+    newGroup.$minX = vertexObj.x;
+    newGroup.$minY = vertexObj.y;
+    newGroup.$maxX = vertexObj.x;
+    newGroup.$maxY = vertexObj.y;
     return newGroup;
   }
 
@@ -105,19 +113,19 @@ function animate(chunk) {
    *   0 if vertex not near enough,
    *   -1 if no future vertices may be near enough
    */
-  function addToGroup(group, x,y) {
+  function addToGroup(group, vertexObj) {
     // add x,y to group if it is inside boundingbox widened by treshold (4)
-    if (isInsideGroup(x,y,group)) {
-      group.push([x,y]);
-      group.$minX = Math.min(x, group.$minX);
-      group.$maxX = Math.max(x, group.$maxX);
+    if (isInsideGroup(vertexObj.x, vertexObj.y, group)) {
+      group.push(vertexObj);
+      group.$minX = Math.min(vertexObj.x, group.$minX);
+      group.$maxX = Math.max(vertexObj.x, group.$maxX);
       // we go through vertices in order height/2 .. -height/2 so no need to update $minY
-      group.$minY = y;
+      group.$minY = vertexObj.y;
       return 1;
     }
 
     // all future y coordinates are too far away from this group
-    if (y < group.$minY-4) {
+    if (vertexObj.y < group.$minY-4) {
       return -1;
     }
 
@@ -135,20 +143,20 @@ function animate(chunk) {
    *       @see comment after merging groups in plane
    *
    */
-  function addVertexTo2dGroup(x, y, z, dx, dy, hue, lightness) {
-    var planeBucket = vertexBuckets[z];
+  function addVertexTo2dGroup(zBucket, vertexObj) {
+    var planeBucket = vertexBuckets[zBucket];
     if (!planeBucket) {
       // create main bucket with initial vertex group
-      var planeBucket = [createNewGroup(x, y)];
+      var planeBucket = [createNewGroup(vertexObj)];
       planeBucket.$finishedGroups = [];
-      vertexBuckets[z] = planeBucket;
+      vertexBuckets[zBucket] = planeBucket;
 
     } else {
       // find old vertex group to put this vertex
       var groupFound = false;
       for (var groupIndex = 0; groupIndex < planeBucket.length; groupIndex++) {
         var group = planeBucket[groupIndex];
-        var result = addToGroup(group, x, y);
+        var result = addToGroup(group, vertexObj);
         if (result === 1) {
           groupFound = true;
           break;
@@ -160,7 +168,7 @@ function animate(chunk) {
       }
       // couldn't find bucket where is near enough, create new bucket
       if (!groupFound) {
-        planeBucket.unshift(createNewGroup(x, y));
+        planeBucket.unshift(createNewGroup(vertexObj));
       }
     }
   }
@@ -174,6 +182,7 @@ function animate(chunk) {
   var color = new THREE.Color();
   var movingVerticesCount = 0;
   for (var i = 0; i < pixels * 3; i += 3) {
+    var vertexObj = vertexObjs[i/3];
     var dx = data.readInt8();
     var dy = data.readInt8();
     var sad = data.readInt16();
@@ -187,9 +196,15 @@ function animate(chunk) {
       lightness = Math.sqrt(dx * dx + dy * dy) / 128;
       movingVerticesCount++;
       z = hue*10*10 + lightness*10;
-      roundZ = (Math.round(hue*10)*10) + Math.round(lightness*10);
-      addVertexTo2dGroup(vertices[i], vertices[i+1], roundZ, dx, dy);
+      roundZ = (Math.round(hue*16)*10) + Math.round(lightness*10);
+      addVertexTo2dGroup(roundZ, vertexObj);
     }
+
+    // update vertex object data for this frame
+    vertexObj.dx = dx;
+    vertexObj.dy = dy;
+    vertexObj.direction = hue;
+    vertexObj.length = lightness;
 
     color.setHSL(hue, 1, lightness + 0.05);
     colors[i + 0] = color.r;
@@ -256,7 +271,6 @@ function animate(chunk) {
       }
     }
 
-    //
     // TODO: here we could do actually 3d/4d grouping and add direction and speed to groups
     // TODO: after this there would not be any planes or 2d groups anymore, but just 3d or 4d groups
 
