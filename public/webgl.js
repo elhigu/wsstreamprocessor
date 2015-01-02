@@ -1,4 +1,4 @@
-var scene, camera, renderer, composer;
+var scene, camera, renderer;
 var geometry, material, mesh;
 
 var width = Math.floor(1920 / 16) + 1;
@@ -93,6 +93,10 @@ function animate(chunk) {
     newGroup.$minY = vertexObj.y;
     newGroup.$maxX = vertexObj.x;
     newGroup.$maxY = vertexObj.y;
+    newGroup.$minDirection = vertexObj.direction;
+    newGroup.$maxDirection = vertexObj.direction;
+    newGroup.$minLength = vertexObj.length;
+    newGroup.$maxLength = vertexObj.length;
     return newGroup;
   }
 
@@ -121,6 +125,11 @@ function animate(chunk) {
       group.$maxX = Math.max(vertexObj.x, group.$maxX);
       // we go through vertices in order height/2 .. -height/2 so no need to update $minY
       group.$minY = vertexObj.y;
+      // 3rd and 4th dimensions...
+      group.$minDirection = Math.min(vertexObj.direction, group.$minDirection);
+      group.$maxDirection = Math.max(vertexObj.direction, group.$maxDirection);
+      group.$minLength = Math.min(vertexObj.length, group.$minLength);
+      group.$maxLength = Math.max(vertexObj.length, group.$maxLength);
       return 1;
     }
 
@@ -223,7 +232,8 @@ function animate(chunk) {
   //
 
   var filteredVertexBuckets = {};
-  for (plane in vertexBuckets) {
+  var sortedGroups = [];
+  for (var plane in vertexBuckets) {
     var oldGroupPlane = vertexBuckets[plane];
 
     // filter out groups of less than 4 vertices
@@ -236,7 +246,7 @@ function animate(chunk) {
     }
 
     //
-    // Brute force merge of nearby groups to bigger ones...
+    // Brute force merge of nearby groups to bigger ones in the same plane
     //
     for (var i1 = 0; i1 < newGroupPlane.length-1; i1++) {
       var group1 = newGroupPlane[i1];
@@ -259,6 +269,10 @@ function animate(chunk) {
           newGroup.$maxX = Math.max(group1.$maxX, group2.$maxX);
           newGroup.$minY = Math.min(group1.$minY, group2.$minY);
           newGroup.$maxY = Math.max(group1.$maxY, group2.$maxY);
+          newGroup.$minDirection = Math.min(group1.$minDirection, group2.$minDirection);
+          newGroup.$maxDirection = Math.max(group1.$maxDirection, group2.$maxDirection);
+          newGroup.$minLength = Math.min(group1.$minLength, group2.$minLength);
+          newGroup.$maxLength = Math.max(group1.$maxLength, group2.$maxLength);
           newGroupPlane[i1] = newGroup;
 
           // delete ingested group
@@ -271,17 +285,19 @@ function animate(chunk) {
       }
     }
 
-    // TODO: here we could do actually 3d/4d grouping and add direction and speed to groups
-    // TODO: after this there would not be any planes or 2d groups anymore, but just 3d or 4d groups
-
     if (newGroupPlane.length > 0) {
       filteredVertexBuckets[plane] = newGroupPlane;
-      // TODO: calculate some average vectors for vertices in group
-      // TODO: calculate density on group
+      for (group in newGroupPlane) {
+        sortedGroups.push(newGroupPlane[group]);
+      }
     }
   }
-
   vertexBuckets = filteredVertexBuckets;
+
+  // O(n^2) merge for all groups, this could be made faster if previous phase would sort all groups
+  // in xy-plane to know more or less, which groups even may overlap
+  console.log("Sorted groupt length", sortedGroups.length);
+  // TODO: for each in sortedGroups....
 
   //
   // Create objects for vertex groups for visualizing found blobs
@@ -295,7 +311,7 @@ function animate(chunk) {
   //
   // The algorithm:
   //
-  // 1. Read some internets...
+  // 1. Do some probability analysis between last frame and current blobs which are counted ...
   //
 
 
