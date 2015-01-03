@@ -95,18 +95,76 @@ function animate(chunk) {
     newGroup.$maxY = vertexObj.y;
     newGroup.$minDirection = vertexObj.direction;
     newGroup.$maxDirection = vertexObj.direction;
-    newGroup.$minLength = vertexObj.length;
-    newGroup.$maxLength = vertexObj.length;
+    newGroup.$minSpeed = vertexObj.speed;
+    newGroup.$maxSpeed = vertexObj.speed;
     return newGroup;
   }
 
-  function isInsideGroup(x,y,group) {
+  function isXYInsideGroup(x,y,group) {
     return (
       x > group.$minX-4 &&
       x < group.$maxX+4 &&
       y > group.$minY-4 &&
       y < group.$maxY+4
     );
+  }
+
+  function sectorWidth(start, end) {
+    if (start < end) {
+      return (end-start);
+    } else {
+      return (end + 1 - start);
+    }
+  }
+
+  // if start,end sectors overlap...
+  function isDirectionInsideGroup(group1, group2) {
+    var threshold = 0.05;
+    // normalize sector directions so that min < max and max may be > 1
+    var min = group2.$minDirection-threshold;
+    var max = group2.$maxDirection+threshold;
+    if (max < min) {
+      max += 1;
+    }
+    // check if start / end of group one's sector overlap or if next round overlaps..
+    // NOTE: here we could probably optimize a bit by just normalizing group1 limits above and check only once...
+    var isInside =
+      (group1.$minDirection > min && group1.$minDirection < max) ||
+      (group1.$maxDirection > min && group1.$maxDirection < max) ||
+      (group1.$minDirection+1 > min && group1.$minDirection+1 < max) ||
+      (group1.$maxDirection+1 > min && group1.$maxDirection+1 < max);
+    return isInside;
+  }
+
+  function isSpeedInsideGroup(group1, group2) {
+    var threshold = 10;
+    var min = group2.$minSpeed-threshold;
+    var max = group2.$maxSpeed+threshold;
+    var isInside =
+      (group1.$minSpeed > min && group1.$minSpeed < max) ||
+      (group1.$maxSpeed > min && group1.$maxSpeed < max);
+    return isInside;
+  }
+
+  //
+  // update min / max by optimizing sector size to be as small as possible
+  //
+  function groupMinMaxDirection(direction, group) {
+    var min = group.$minDirection;
+    var max = group.$maxDirection;
+    // sector overflows 0 point
+    if (min > max) {
+      max += 1;
+    }
+    if (direction > min && direction < max) {
+      return "NONE";
+    }
+    if (sectorWidth(direction, group.$maxDirection) <
+        sectorWidth(group.$minDirection, direction)) {
+      return "MIN";
+    } else {
+      return "MAX";
+    }
   }
 
   /**
@@ -119,17 +177,22 @@ function animate(chunk) {
    */
   function addToGroup(group, vertexObj) {
     // add x,y to group if it is inside boundingbox widened by treshold (4)
-    if (isInsideGroup(vertexObj.x, vertexObj.y, group)) {
+    if (isXYInsideGroup(vertexObj.x, vertexObj.y, group)) {
       group.push(vertexObj);
       group.$minX = Math.min(vertexObj.x, group.$minX);
       group.$maxX = Math.max(vertexObj.x, group.$maxX);
       // we go through vertices in order height/2 .. -height/2 so no need to update $minY
       group.$minY = vertexObj.y;
-      // 3rd and 4th dimensions...
-      group.$minDirection = Math.min(vertexObj.direction, group.$minDirection);
-      group.$maxDirection = Math.max(vertexObj.direction, group.$maxDirection);
-      group.$minLength = Math.min(vertexObj.length, group.$minLength);
-      group.$maxLength = Math.max(vertexObj.length, group.$maxLength);
+      // 3rd and 4th dimensions... speed
+      group.$minSpeed = Math.min(vertexObj.speed, group.$minSpeed);
+      group.$maxSpeed = Math.max(vertexObj.speed, group.$maxSpeed);
+      // and direction... in direction min / max we always go for minimum sector siz
+      var whatToUpdate = groupMinMaxDirection(vertexObj.direction, group);
+      if (whatToUpdate === "MIN") {
+        group.$minDirection = vertexObj.direction;
+      } else if (whatToUpdate === "MAX") {
+        group.$maxDirection = vertexObj.direction;
+      }
       return 1;
     }
 
@@ -213,7 +276,7 @@ function animate(chunk) {
     vertexObj.dx = dx;
     vertexObj.dy = dy;
     vertexObj.direction = hue;
-    vertexObj.length = lightness;
+    vertexObj.speed = lightness;
 
     color.setHSL(hue, 1, lightness + 0.05);
     colors[i + 0] = color.r;
@@ -230,6 +293,57 @@ function animate(chunk) {
   //
   // Also merge $finishedGroups again with all groups.
   //
+
+  /// Combines information of 2 groups and returns new group
+  function merge(group1, group2) {
+    var newGroup = group1.concat(group2);
+    newGroup.$minX = Math.min(group1.$minX, group2.$minX);
+    newGroup.$maxX = Math.max(group1.$maxX, group2.$maxX);
+    newGroup.$minY = Math.min(group1.$minY, group2.$minY);
+    newGroup.$maxY = Math.max(group1.$maxY, group2.$maxY);
+    newGroup.$minSpeed = Math.min(group1.$minSpeed, group2.$minSpeed);
+    newGroup.$maxSpeed = Math.max(group1.$maxSpeed, group2.$maxSpeed);
+
+    // and merge directions too take group 2 as base (there must be nicer way to handle angles sectors...)
+    newGroup.$minDirection = group2.$minDirection;
+    newGroup.$maxDirection = group2.$maxDirection;
+    // update with group1 min direction
+    var whatToUpdate = groupMinMaxDirection(group1.$minDirection, group2);
+    if (whatToUpdate === "MIN") {
+      newGroup.$minDirection = group1.$minDirection;
+    } else if (whatToUpdate === "MAX") {
+      newGroup.$minDirection = group1.$minDirection;
+    }
+    // update with group1 max direction
+    whatToUpdate = groupMinMaxDirection(group1.$maxDirection, group2);
+    if (whatToUpdate === "MIN") {
+      newGroup.$minDirection = group1.$maxDirection;
+    } else if (whatToUpdate === "MAX") {
+      newGroup.$minDirection = group1.$maxDirection;
+    }
+    return newGroup;
+  }
+
+  /// Merge groups together if they are near enough to each other in xy-plane
+  function merge2dGroup(group1, group2) {
+    if (
+      isXYInsideGroup(group1.$minX, group1.$minY, group2) ||
+      isXYInsideGroup(group1.$maxX, group1.$minY, group2) ||
+      isXYInsideGroup(group1.$minX, group1.$maxY, group2) ||
+      isXYInsideGroup(group1.$maxX, group1.$maxY, group2)
+    ) {
+      return merge(group1, group2);
+    }
+    return null;
+  }
+
+  /// 4d merge check also that that direction / speed is fine before merging
+  function merge4dGroup(group1, group2) {
+    if (isDirectionInsideGroup(group1, group2) && isSpeedInsideGroup(group1, group2)) {
+      return merge2dGroup(group1, group2);
+    }
+    return null;
+  }
 
   var filteredVertexBuckets = {};
   var sortedGroups = [];
@@ -256,29 +370,11 @@ function animate(chunk) {
         if (group1.$maxY < group2.$minY-4) { break; }
 
         // if any of group corners is inside the other + threshold
-        if (
-          isInsideGroup(group1.$minX, group1.$minY, group2) ||
-          isInsideGroup(group1.$maxX, group1.$minY, group2) ||
-          isInsideGroup(group1.$minX, group1.$maxY, group2) ||
-          isInsideGroup(group1.$maxX, group1.$maxY, group2)
-        ) {
-
-          // merge group
-          var newGroup = group1.concat(group2);
-          newGroup.$minX = Math.min(group1.$minX, group2.$minX);
-          newGroup.$maxX = Math.max(group1.$maxX, group2.$maxX);
-          newGroup.$minY = Math.min(group1.$minY, group2.$minY);
-          newGroup.$maxY = Math.max(group1.$maxY, group2.$maxY);
-          newGroup.$minDirection = Math.min(group1.$minDirection, group2.$minDirection);
-          newGroup.$maxDirection = Math.max(group1.$maxDirection, group2.$maxDirection);
-          newGroup.$minLength = Math.min(group1.$minLength, group2.$minLength);
-          newGroup.$maxLength = Math.max(group1.$maxLength, group2.$maxLength);
+        var newGroup = merge2dGroup(group1, group2);
+        if (newGroup !== null) {
           newGroupPlane[i1] = newGroup;
-
-          // delete ingested group
           newGroupPlane.splice(i2,1);
-
-          // run merge for new group instead of continuing to next one
+          // remove merged group and run merge for new group instead of continuing to next one
           i1--;
           break;
         }
@@ -296,13 +392,25 @@ function animate(chunk) {
 
   // O(n^2) merge for all groups, this could be made faster if previous phase would sort all groups
   // in xy-plane to know more or less, which groups even may overlap
-  console.log("Sorted groupt length", sortedGroups.length);
-  // TODO: for each in sortedGroups....
+  for (var g1 = 0; g1 < sortedGroups.length-1; g1++) {
+    for (var g2 = g1 + 1; g2 < sortedGroups.length; g2++) {
+      var group1 = sortedGroups[g1];
+      var group2 = sortedGroups[g2];
+      var newGroup = merge4dGroup(group1, group2);
+      if (newGroup !== null) {
+        sortedGroups[g1] = newGroup;
+        // merge was done, remove merged group2 and run merge for index g1 again
+        sortedGroups.splice(g2,1);
+        g1--;
+        break;
+      }
+    }
+  }
 
   //
-  // Create objects for vertex groups for visualizing found blobs
+  // Create objects for groups for visualizing found blobs
   //
-  visualizeVertexGroups(vertexBuckets);
+  visualizeVertexGroups(sortedGroups);
 
   // ------------------------------- END OF VERTEX GROUP DETECTION -----------------------------------
 
@@ -351,7 +459,7 @@ lineMaterial = new THREE.LineBasicMaterial( {
 } );
 
 vertexGroupObjects = [];
-function visualizeVertexGroups(buckets) {
+function visualizeVertexGroups(groups) {
   // delete old ones
   for (wgObjIndex in vertexGroupObjects) {
     scene.remove(vertexGroupObjects[wgObjIndex]);
@@ -359,23 +467,21 @@ function visualizeVertexGroups(buckets) {
   vertexGroupObjects = [];
 
   // create new for every group in plane
-  for (var z in buckets) {
-    var plane = buckets[z];
-    for (var groupIndex in plane) {
-      var group = plane[groupIndex];
-      if (group.length === 1) { continue; }
-      var groupBoundingBox = new THREE.Geometry();
-      groupBoundingBox.vertices.push(
-        new THREE.Vector3( group.$minX, group.$minY, z ),
-        new THREE.Vector3( group.$maxX, group.$minY, z ),
-        new THREE.Vector3( group.$maxX, group.$maxY, z ),
-        new THREE.Vector3( group.$minX, group.$maxY, z ),
-        new THREE.Vector3( group.$minX, group.$minY, z )
-      );
-      var line = new THREE.Line( groupBoundingBox, lineMaterial );
-      vertexGroupObjects.push(line);
-      scene.add(line);
-    }
+  for (var groupIndex in groups) {
+    var group = groups[groupIndex];
+    var groupBoundingBox = new THREE.Geometry();
+    groupBoundingBox.vertices.push(
+      new THREE.Vector3(group.$minX, group.$minY, 120),
+      new THREE.Vector3(group.$maxX, group.$minY, 120),
+      new THREE.Vector3(group.$maxX, group.$maxY, 120),
+      new THREE.Vector3(group.$minX, group.$maxY, 120),
+      new THREE.Vector3(group.$minX, group.$minY, 120)
+    );
+    var line = new THREE.Line(groupBoundingBox, lineMaterial);
+    vertexGroupObjects.push(line);
+    scene.add(line);
+
+    // TODO: create lines for min / max direction and speed... (4 lines 2 for max then 2 for min)...
   }
 }
 
