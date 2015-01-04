@@ -436,13 +436,11 @@ function animate(chunk) {
   var groupInfo = [];
   for (groupIndex in sortedGroups) {
     var group = sortedGroups[groupIndex];
-    groupInfo.push([
-      '<br/><span class="infoLabel">Group / vertex count</spane>: ',
-      groupIndex, ' / ', group.length].join(''));
-    groupInfo.push(['<br/><span class="infoLabel">$minDirection</spane>: ', group.$minDirection].join(''));
-    groupInfo.push(['<br/><span class="infoLabel">$maxDirection</spane>: ', group.$maxDirection].join(''));
-    groupInfo.push(['<br/><span class="infoLabel">$minSpeed</spane>: ', group.$minSpeed].join(''));
-    groupInfo.push(['<br/><span class="infoLabel">$maxSpeed</spane>: ', group.$maxSpeed].join(''));
+    groupInfo.push(['<br/><span class="infoLabel">==> Group #', groupIndex, ' Vertices</spane>: ', group.length].join(''));
+    groupInfo.push(['<br/><span class="infoLabel">: : : : > $minDirection</spane>: ', group.$minDirection.toPrecision(4)].join(''));
+    groupInfo.push(['<br/><span class="infoLabel">: : : : > $maxDirection</spane>: ', group.$maxDirection.toPrecision(4)].join(''));
+    groupInfo.push(['<br/><span class="infoLabel">: : : : > $minSpeed</spane>: ', group.$minSpeed.toPrecision(4)].join(''));
+    groupInfo.push(['<br/><span class="infoLabel">: : : : > $maxSpeed</spane>: ', group.$maxSpeed.toPrecision(4)].join(''));
   }
   document.getElementById('groupingInfo').innerHTML = groupInfo.join('');
 }
