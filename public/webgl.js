@@ -434,13 +434,15 @@ function animate(chunk) {
 
   // generate group info strings
   var groupInfo = [];
-  for (plane in vertexBuckets) {
-    var planeGroups = vertexBuckets[plane];
-    if (planeGroups.length > 0) {
-      groupInfo.push([
-        '<br/><span class="infoLabel">Bucket / group count</spane>: ',
-        plane, ' / ', planeGroups.length].join(''));
-    }
+  for (groupIndex in sortedGroups) {
+    var group = sortedGroups[groupIndex];
+    groupInfo.push([
+      '<br/><span class="infoLabel">Group / vertex count</spane>: ',
+      groupIndex, ' / ', group.length].join(''));
+    groupInfo.push(['<br/><span class="infoLabel">$minDirection</spane>: ', group.$minDirection].join(''));
+    groupInfo.push(['<br/><span class="infoLabel">$maxDirection</spane>: ', group.$maxDirection].join(''));
+    groupInfo.push(['<br/><span class="infoLabel">$minSpeed</spane>: ', group.$minSpeed].join(''));
+    groupInfo.push(['<br/><span class="infoLabel">$maxSpeed</spane>: ', group.$maxSpeed].join(''));
   }
   document.getElementById('groupingInfo').innerHTML = groupInfo.join('');
 }
