@@ -35,7 +35,7 @@ function init() {
         y: vertices[offset + 1],
         dx: 0,
         dy: 0,
-        direction: 0, length: 0
+        direction: 0, speed: 0
       });
     }
   }
@@ -119,7 +119,7 @@ function animate(chunk) {
 
   // if start,end sectors overlap...
   function isDirectionInsideGroup(group1, group2) {
-    var threshold = 0.05;
+    var threshold = 0.1;
     // normalize sector directions so that min < max and max may be > 1
     var min = group2.$minDirection-threshold;
     var max = group2.$maxDirection+threshold;
@@ -137,7 +137,7 @@ function animate(chunk) {
   }
 
   function isSpeedInsideGroup(group1, group2) {
-    var threshold = 10;
+    var threshold = 0.2;
     var min = group2.$minSpeed-threshold;
     var max = group2.$maxSpeed+threshold;
     var isInside =
@@ -263,20 +263,19 @@ function animate(chunk) {
     var hue = 0;
     var lightness = 0;
     var z = 0;
+    vertexObj.dx = dx;
+    vertexObj.dy = dy;
+
     if (dx || dy) {
       hue = (Math.atan2(dy, dx) / Math.PI + 1) / 2;
       lightness = Math.sqrt(dx * dx + dy * dy) / 128;
+      vertexObj.direction = hue;
+      vertexObj.speed = lightness;
       movingVerticesCount++;
       z = hue*10*5 + lightness*10;
       roundZ = (Math.round(hue*16)*10) + Math.round(lightness*10);
       addVertexTo2dGroup(roundZ, vertexObj);
     }
-
-    // update vertex object data for this frame
-    vertexObj.dx = dx;
-    vertexObj.dy = dy;
-    vertexObj.direction = hue;
-    vertexObj.speed = lightness;
 
     color.setHSL(hue, 1, lightness + 0.05);
     colors[i + 0] = color.r;
@@ -461,7 +460,7 @@ var lineMaterial = new THREE.LineBasicMaterial( {
 var minMovementMaterial = new THREE.LineBasicMaterial( {
   color: 0x0000ff,
   opacity: 0.7,
-  linewidth: 10,
+  linewidth: 3,
   depthWrite: false,
   depthTest: false,
   transparent: true
@@ -470,7 +469,7 @@ var minMovementMaterial = new THREE.LineBasicMaterial( {
 var maxMovementMaterial = new THREE.LineBasicMaterial( {
   color: 0x00ff00,
   opacity: 0.7,
-  linewidth: 10,
+  linewidth: 3,
   depthWrite: false,
   depthTest: false,
   transparent: true
@@ -507,15 +506,28 @@ function visualizeVertexGroups(groups) {
     var startAngleY = Math.sin((group.$minDirection-0.5)*Math.PI*2)*speedTriangleScale;
     var endAngleX = Math.cos((group.$maxDirection-0.5)*Math.PI*2)*speedTriangleScale;
     var endAngleY = Math.sin((group.$maxDirection-0.5)*Math.PI*2)*speedTriangleScale;
+
+    // blue min speed triangle
     var minSpeedStartX = centerX + startAngleX * group.$minSpeed;
     var minSpeedStartY = centerY + startAngleY * group.$minSpeed;
     var minSpeedEndX = centerX + endAngleX * group.$minSpeed;
     var minSpeedEndY = centerY + endAngleY * group.$minSpeed;
+    var minSpeedTriangle = new THREE.Geometry();
+    minSpeedTriangle.vertices.push(
+      new THREE.Vector3(centerX, centerY, 71),
+      new THREE.Vector3(minSpeedStartX, minSpeedStartY, 71),
+      new THREE.Vector3(minSpeedEndX, minSpeedEndY, 71),
+      new THREE.Vector3(centerX, centerY, 71)
+    );
+    var minSpeedTriangleLine = new THREE.Line(minSpeedTriangle, minMovementMaterial);
+    vertexGroupObjects.push(minSpeedTriangleLine);
+    scene.add(minSpeedTriangleLine);
+
+    // green max speed triangle
     var maxSpeedStartX = centerX + startAngleX * group.$maxSpeed;
     var maxSpeedStartY = centerY + startAngleY * group.$maxSpeed;
     var maxSpeedEndX = centerX + endAngleX * group.$maxSpeed;
     var maxSpeedEndY = centerY + endAngleY * group.$maxSpeed;
-
     var maxSpeedTriangle = new THREE.Geometry();
     maxSpeedTriangle.vertices.push(
       new THREE.Vector3(centerX, centerY, 71),
@@ -523,20 +535,10 @@ function visualizeVertexGroups(groups) {
       new THREE.Vector3(maxSpeedEndX, maxSpeedEndY, 71),
       new THREE.Vector3(centerX, centerY, 71)
     );
+
     var maxSpeedTriangleLine = new THREE.Line(maxSpeedTriangle, maxMovementMaterial);
     vertexGroupObjects.push(maxSpeedTriangleLine);
     scene.add(maxSpeedTriangleLine);
-
-    var minSpeedTriangle = new THREE.Geometry();
-    minSpeedTriangle.vertices.push(
-      new THREE.Vector3(centerX, centerY, 72),
-      new THREE.Vector3(minSpeedStartX, minSpeedStartY, 72),
-      new THREE.Vector3(minSpeedEndX, minSpeedEndY, 72),
-      new THREE.Vector3(centerX, centerY, 72)
-    );
-    var minSpeedTriangleLine = new THREE.Line(minSpeedTriangle, minMovementMaterial);
-    vertexGroupObjects.push(minSpeedTriangleLine);
-    scene.add(minSpeedTriangleLine);
   }
 }
 
