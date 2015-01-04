@@ -11,7 +11,7 @@ var statsFps = new Stats();
 var statsMs = new Stats();
 statsMs.setMode(1);
 
-var cameraZMax = 1000;
+var cameraZMax = 2000;
 
 init();
 
@@ -267,7 +267,7 @@ function animate(chunk) {
       hue = (Math.atan2(dy, dx) / Math.PI + 1) / 2;
       lightness = Math.sqrt(dx * dx + dy * dy) / 128;
       movingVerticesCount++;
-      z = hue*10*10 + lightness*10;
+      z = hue*10*5 + lightness*10;
       roundZ = (Math.round(hue*16)*10) + Math.round(lightness*10);
       addVertexTo2dGroup(roundZ, vertexObj);
     }
@@ -489,11 +489,11 @@ function visualizeVertexGroups(groups) {
     var group = groups[groupIndex];
     var groupBoundingBox = new THREE.Geometry();
     groupBoundingBox.vertices.push(
-      new THREE.Vector3(group.$minX, group.$minY, 120),
-      new THREE.Vector3(group.$maxX, group.$minY, 120),
-      new THREE.Vector3(group.$maxX, group.$maxY, 120),
-      new THREE.Vector3(group.$minX, group.$maxY, 120),
-      new THREE.Vector3(group.$minX, group.$minY, 120)
+      new THREE.Vector3(group.$minX, group.$minY, 70),
+      new THREE.Vector3(group.$maxX, group.$minY, 70),
+      new THREE.Vector3(group.$maxX, group.$maxY, 70),
+      new THREE.Vector3(group.$minX, group.$maxY, 70),
+      new THREE.Vector3(group.$minX, group.$minY, 70)
     );
     var line = new THREE.Line(groupBoundingBox, lineMaterial);
     vertexGroupObjects.push(line);
@@ -502,7 +502,7 @@ function visualizeVertexGroups(groups) {
     // create triangles for visualizing direction / spees
     var centerX = (group.$minX + group.$maxX)/2;
     var centerY = (group.$minY + group.$maxY)/2;
-    var speedTriangleScale = 20;
+    var speedTriangleScale = 70;
     var startAngleX = Math.cos((group.$minDirection-0.5)*Math.PI*2)*speedTriangleScale;
     var startAngleY = Math.sin((group.$minDirection-0.5)*Math.PI*2)*speedTriangleScale;
     var endAngleX = Math.cos((group.$maxDirection-0.5)*Math.PI*2)*speedTriangleScale;
@@ -518,10 +518,10 @@ function visualizeVertexGroups(groups) {
 
     var maxSpeedTriangle = new THREE.Geometry();
     maxSpeedTriangle.vertices.push(
-      new THREE.Vector3(centerX, centerY, 121),
-      new THREE.Vector3(maxSpeedStartX, maxSpeedStartY, 121),
-      new THREE.Vector3(maxSpeedEndX, maxSpeedEndY, 121),
-      new THREE.Vector3(centerX, centerY, 121)
+      new THREE.Vector3(centerX, centerY, 71),
+      new THREE.Vector3(maxSpeedStartX, maxSpeedStartY, 71),
+      new THREE.Vector3(maxSpeedEndX, maxSpeedEndY, 71),
+      new THREE.Vector3(centerX, centerY, 71)
     );
     var maxSpeedTriangleLine = new THREE.Line(maxSpeedTriangle, maxMovementMaterial);
     vertexGroupObjects.push(maxSpeedTriangleLine);
@@ -529,10 +529,10 @@ function visualizeVertexGroups(groups) {
 
     var minSpeedTriangle = new THREE.Geometry();
     minSpeedTriangle.vertices.push(
-      new THREE.Vector3(centerX, centerY, 122),
-      new THREE.Vector3(minSpeedStartX, minSpeedStartY, 122),
-      new THREE.Vector3(minSpeedEndX, minSpeedEndY, 122),
-      new THREE.Vector3(centerX, centerY, 122)
+      new THREE.Vector3(centerX, centerY, 72),
+      new THREE.Vector3(minSpeedStartX, minSpeedStartY, 72),
+      new THREE.Vector3(minSpeedEndX, minSpeedEndY, 72),
+      new THREE.Vector3(centerX, centerY, 72)
     );
     var minSpeedTriangleLine = new THREE.Line(minSpeedTriangle, minMovementMaterial);
     vertexGroupObjects.push(minSpeedTriangleLine);
