@@ -264,7 +264,7 @@ function animate(chunk) {
     var lightness = 0;
     var z = 0;
     if (dx || dy) {
-      hue = (Math.atan2(dx, dy) / Math.PI + 1) / 2;
+      hue = (Math.atan2(dy, dx) / Math.PI + 1) / 2;
       lightness = Math.sqrt(dx * dx + dy * dy) / 128;
       movingVerticesCount++;
       z = hue*10*10 + lightness*10;
@@ -449,8 +449,26 @@ function animate(chunk) {
 // Create red rectangles around found groups...
 //
 
-lineMaterial = new THREE.LineBasicMaterial( {
+var lineMaterial = new THREE.LineBasicMaterial( {
   color: 0xff0000,
+  opacity: 0.7,
+  linewidth: 10,
+  depthWrite: false,
+  depthTest: false,
+  transparent: true
+} );
+
+var minMovementMaterial = new THREE.LineBasicMaterial( {
+  color: 0x0000ff,
+  opacity: 0.7,
+  linewidth: 10,
+  depthWrite: false,
+  depthTest: false,
+  transparent: true
+} );
+
+var maxMovementMaterial = new THREE.LineBasicMaterial( {
+  color: 0x00ff00,
   opacity: 0.7,
   linewidth: 10,
   depthWrite: false,
@@ -481,7 +499,44 @@ function visualizeVertexGroups(groups) {
     vertexGroupObjects.push(line);
     scene.add(line);
 
-    // TODO: create lines for min / max direction and speed... (4 lines 2 for max then 2 for min)...
+    // create triangles for visualizing direction / spees
+    var centerX = (group.$minX + group.$maxX)/2;
+    var centerY = (group.$minY + group.$maxY)/2;
+    var speedTriangleScale = 20;
+    var startAngleX = Math.cos((group.$minDirection-0.5)*Math.PI*2)*speedTriangleScale;
+    var startAngleY = Math.sin((group.$minDirection-0.5)*Math.PI*2)*speedTriangleScale;
+    var endAngleX = Math.cos((group.$maxDirection-0.5)*Math.PI*2)*speedTriangleScale;
+    var endAngleY = Math.sin((group.$maxDirection-0.5)*Math.PI*2)*speedTriangleScale;
+    var minSpeedStartX = centerX + startAngleX * group.$minSpeed;
+    var minSpeedStartY = centerY + startAngleY * group.$minSpeed;
+    var minSpeedEndX = centerX + endAngleX * group.$minSpeed;
+    var minSpeedEndY = centerY + endAngleY * group.$minSpeed;
+    var maxSpeedStartX = centerX + startAngleX * group.$maxSpeed;
+    var maxSpeedStartY = centerY + startAngleY * group.$maxSpeed;
+    var maxSpeedEndX = centerX + endAngleX * group.$maxSpeed;
+    var maxSpeedEndY = centerY + endAngleY * group.$maxSpeed;
+
+    var maxSpeedTriangle = new THREE.Geometry();
+    maxSpeedTriangle.vertices.push(
+      new THREE.Vector3(centerX, centerY, 121),
+      new THREE.Vector3(maxSpeedStartX, maxSpeedStartY, 121),
+      new THREE.Vector3(maxSpeedEndX, maxSpeedEndY, 121),
+      new THREE.Vector3(centerX, centerY, 121)
+    );
+    var maxSpeedTriangleLine = new THREE.Line(maxSpeedTriangle, maxMovementMaterial);
+    vertexGroupObjects.push(maxSpeedTriangleLine);
+    scene.add(maxSpeedTriangleLine);
+
+    var minSpeedTriangle = new THREE.Geometry();
+    minSpeedTriangle.vertices.push(
+      new THREE.Vector3(centerX, centerY, 122),
+      new THREE.Vector3(minSpeedStartX, minSpeedStartY, 122),
+      new THREE.Vector3(minSpeedEndX, minSpeedEndY, 122),
+      new THREE.Vector3(centerX, centerY, 122)
+    );
+    var minSpeedTriangleLine = new THREE.Line(minSpeedTriangle, minMovementMaterial);
+    vertexGroupObjects.push(minSpeedTriangleLine);
+    scene.add(minSpeedTriangleLine);
   }
 }
 
