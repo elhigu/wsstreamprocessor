@@ -267,7 +267,7 @@ function animate(chunk) {
     vertexObj.dy = dy;
 
     if (dx || dy) {
-      hue = (Math.atan2(dy, dx) / Math.PI + 1) / 2;
+      hue = (Math.atan2(dy, -dx) / Math.PI + 1) / 2;
       lightness = Math.sqrt(dx * dx + dy * dy) / 128;
       vertexObj.direction = hue;
       vertexObj.speed = lightness;
