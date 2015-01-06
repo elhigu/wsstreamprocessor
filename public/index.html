@@ -50,12 +50,12 @@
       <span class="info-label">Grouping info</span>: <span id="groupingInfo"></span>
     </div>
     <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="webgl.js"></script>
     <script>
       var socket = io();
       socket.on('newFrame', function(msg) {
       	animate(msg);
       });
     </script>
-    <script type="text/javascript" src="webgl.js"></script>
   </body>
 </html>
