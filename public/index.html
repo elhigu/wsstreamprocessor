@@ -52,7 +52,9 @@
     <script src="/socket.io/socket.io.js"></script>
     <script type="text/javascript" src="webgl.js"></script>
     <script>
-      var socket = io();
+      var socket = io({
+        transports: ['websocket']
+      });
       var frameQueue = [];
       socket.on('newFrame', function(msg) {
         frameQueue.unshift(msg);
