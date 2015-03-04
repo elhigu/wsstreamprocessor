@@ -433,7 +433,7 @@ function animate(chunk) {
 
   // generate group info strings
   var groupInfo = [];
-  for (groupIndex in sortedGroups) {
+  for (var groupIndex = 0; groupIndex < sortedGroups.length; groupIndex++) {
     var group = sortedGroups[groupIndex];
     groupInfo.push(['<br/><span class="infoLabel">==> Group #', groupIndex, ' Vertices</spane>: ', group.length].join(''));
     groupInfo.push(['<br/><span class="infoLabel">: : : : > $minDirection</spane>: ', group.$minDirection.toPrecision(4)].join(''));

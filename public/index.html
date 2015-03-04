@@ -53,9 +53,17 @@
     <script type="text/javascript" src="webgl.js"></script>
     <script>
       var socket = io();
+      var frameQueue = [];
       socket.on('newFrame', function(msg) {
-      	animate(msg);
+        frameQueue.unshift(msg);
       });
+
+      // play frames from buffer a bit faster than 25 fps
+      setInterval(function () {
+        if (frameQueue.length > 0) {
+          animate(frameQueue.pop());
+        }
+      }, 38);
     </script>
   </body>
 </html>
