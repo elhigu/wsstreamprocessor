@@ -13,6 +13,9 @@ statsMs.setMode(1);
 
 var cameraZMax = 2000;
 
+var objTracker = new ObjTracker();
+
+
 init();
 
 function init() {
@@ -406,12 +409,16 @@ function animate(chunk) {
     }
   }
 
+  // TODO: calculate average for direction and speed...
+
   //
   // Create objects for groups for visualizing found blobs
   //
   visualizeVertexGroups(sortedGroups);
 
   // ------------------------------- END OF VERTEX GROUP DETECTION -----------------------------------
+
+  objTracker.addFrame(sortedGroups);
 
   //
   // TODO: Add here object tracking + their visualization
