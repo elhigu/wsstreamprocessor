@@ -29,12 +29,14 @@ function ObjTracker(options) {
  */
 ObjTracker.prototype.addFrame = function (groups) {
 
-  var groupsByObjIndex = this._mapGroupsToObjects(groups);
+  var groupsByObjIndex = this._groupGroupsToObjects(groups);
 
+  // TODO: update all objects with new group data
+
+  // TODO: check all groups
   // TODO: find if group is part of some existing object
   // TODO: if so, add group to list for updating that group data
   // TODO: if no group found, create new group for object (if new group does not live long enough it will be removed)
-
 };
 
 /**
@@ -45,31 +47,36 @@ ObjTracker.prototype.addFrame = function (groups) {
 ObjTracker.prototype.worldMoved = function (dx, dy) {
 };
 
-ObjTracker.prototype._mapGroupsToObjects = function (groups) {
-  for (var gi = 0; gi < groups.length; gi++) {
-    var mostProbableObj = this._mostProbableObj(groups[gi]);
-    // TODO: get list of probabilities which object group belong to...
-    // TODO: X,y has biggest weight, direction then and velocity last...
-    // TODO: match algorithm has best result is zero... bigger worse e.g.
-    // dx*5+dy*5+dd*2+dv... if not in treshold,
-    // create new group and take it in for next group in the same frame
-  }
-};
+ObjTracker.prototype._groupGroupsToObjects = function (groups) {
+  return _.groupBy(groups, function (group) {
+    return _.find(this.trackedObjs, function (obj) {
+      return obj.isMatch(group);
+    }) || null;
+  });
 
-ObjTracker.prototype._mostProbableObj = function (group) {
-  var mostProbable = 1000000;
-  for (var i = 0; i < this.trackedObjs; i++) {
-    var probability = this.trackedObjs[i].calcMatch(group);
-    mostProbable = Math.min(probability, mostProbable);
-  }
+  // TODO: if multiple matched, calculate match value to select to which object group belong
+  // TODO: for now, just take first match
 };
-
 
 function TrackedObj(group) {
   // TODO: setup initial values for object for matching....
 }
 
+/**
+ * Returns true if group could match to object.
+ *
+ * @param group
+ * @returns
+ */
 // $minY, $maxY, $minX, $minY, $minSpeed, $maxSpeed, $minDirection, $maxDirection
-TrackedObj.prototype.calcMatch = function (group) {
+TrackedObj.prototype.isMatch = function (group) {
+
+  // 1. thresholding by direction and position
+  // TODO: first check that group is inside with certain threshold, +
+  // TODO: some calculated shift depending on speed
+  // TODO: then check that direction is inside of groups direction
+
+  // 2. for multiple matches calculate probability... for now, just return first match
+  // TODO: then calculate match according to group size and position
   return 0;
 };

@@ -28,6 +28,7 @@
   ],
   "dependencies": {
     "stats.js": "*",
-    "threejs-examples": "*"
+    "threejs-examples": "*",
+    "lodash": "~3.5.0"
   }
 }
