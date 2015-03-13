@@ -28,15 +28,14 @@ function ObjTracker(options) {
  * @param groups
  */
 ObjTracker.prototype.addFrame = function (groups) {
-
   var groupsByObjIndex = this._groupGroupsToObjects(groups);
 
-  // TODO: update all objects with new group data
+  // TODO: update all objects with data just recognized, fix position / size / direction etc. and
+  // TODO: update latest verified match...
 
-  // TODO: check all groups
-  // TODO: find if group is part of some existing object
-  // TODO: if so, add group to list for updating that group data
-  // TODO: if no group found, create new group for object (if new group does not live long enough it will be removed)
+  // TODO: create new groups for all matches grouped to null
+
+  // TODO: post filter groups, if there is necessity to merge some recognized objects....
 };
 
 /**
