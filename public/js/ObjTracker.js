@@ -29,11 +29,20 @@ function ObjTracker(options) {
  */
 ObjTracker.prototype.addFrame = function (groups) {
   var groupsByObjIndex = this._groupGroupsToObjects(groups);
+  var i;
 
-  // TODO: update all objects with data just recognized, fix position / size / direction etc. and
-  // TODO: update latest verified match...
+  // update tracked objects, with groups of this frame
+  for (i = 0; i < groupsByObjIndex.length; i++) {
+    var newGroups = groupsByObjIndex[i];
+    this.trackedObjs[i].updateState(newGroups);
+  }
 
-  // TODO: create new groups for all matches grouped to null
+  // create new groups for all matches which didn't have earlier group
+  var newGroups = groupsByObjIndex[null] || [];
+  for (i = 0; i < newGroups; i++) {
+    var newObj = new TrackedObj(newGroups[i]);
+    this.trackedObjs.push(newObj);
+  }
 
   // TODO: post filter groups, if there is necessity to merge some recognized objects....
 };
@@ -60,6 +69,25 @@ ObjTracker.prototype._groupGroupsToObjects = function (groups) {
 function TrackedObj(group) {
   // TODO: setup initial values for object for matching....
 }
+
+/**
+ * Updates state of object for frame.
+ *
+ * If matchedGroups is undefined, null or [], then do nothing. Depending on motion, we
+ * may decide, if object just stopped or vanished completely unexpectedly, e.g got under some other
+ * obj.
+ *
+ * @param {Array} matchedGroups Groups, which were matched in this frame.
+ * @returns True if object is ok, false if update function thinks that object should not be tracked anymore.
+ */
+TrackedObj.prototype.upadateState = function (matchedGroups) {
+  // TODO: update all objects with data just recognized, fix position / size / direction etc. and
+  // TODO: update latest verified match...
+  //
+  // TODO: if group state is new (it havent got enough positive matches) and certain time
+  // TODO: lost, then we just should dump the object.
+  // TODO:
+};
 
 /**
  * Returns true if group could match to object.
