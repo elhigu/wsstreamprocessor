@@ -1,22 +1,5 @@
 
 function ObjTracker(options) {
-  /**
-   * Each tracked object has following properties:
-   *
-   * state     Tracking state, New, Active, Passive
-   * history   Ring buffer containing few latest object movement data
-   *           (we can e.g. recognize acceleration, if we are about to stop or what..).
-   *
-   * History elements contain:
-   *   direction    Direction where object was moving.
-   *   speed        Speed of object.
-   *   position.x   X position.
-   *   position.y   Y position.
-   *   width        Width.
-   *   height       Height.
-   *   size         Number of vertices in object.
-   *
-   */
   this.trackedObjs = [];
 }
 
@@ -66,9 +49,58 @@ ObjTracker.prototype._groupGroupsToObjects = function (groups) {
   // TODO: for now, just take first match
 };
 
-function TrackedObj(group) {
-  // TODO: setup initial values for object for matching....
+/**
+ * Tracked object is actual entity which is being recognized for tracking.
+ *
+ * When created, object is in 'Fresh' state, which means that if tracking is lost, it will
+ * be discarded very aggressively.
+ *
+ * When object has been alive for enough time,
+ *
+ * state     Tracking state, New, Active, Passive
+ * history   Ring buffer containing few latest object movement data
+ *           (we can e.g. recognize acceleration, if we are about to stop or what..).
+ *
+ * History elements contain:
+ *   direction    Direction where object was moving.
+ *   speed        Speed of object.
+ *   position.x   X position.
+ *   position.y   Y position.
+ *   width        Width.
+ *   height       Height.
+ *   size         Number of vertices in object.
+ *
+ */
+function TrackedObj(group, options) {
+  var defaults = {
+    // Thresholds for changing object state
+    dropFreshObjThreshold : 10,
+    setActiveThreshold : 25*1,
+    setPassiveThreshold : 25*5,
+    dropPassiveThreshold : 25*60*3,
+
+    // Thresholds for matching group with object
+    positionThreshold : 4,
+    speedThreshold : 0.2,
+    directionThreshold : 0.2
+  };
+  _.defaults(options, defaults);
+
+  this.options = options;
+
+  this.state = TrackedObj.State.Fresh;
+  this.direction = generalDirectionOfGroup(group);
+  this.speed = generalSpeedOfGroup(group);
+  this.minPosition = { x : group.$minX, y : group.$minY };
+  this.maxPosition = { x : group.$maxX, y : group.$maxY };
+  this.size = group.length;
 }
+
+TrackedObj.State = {
+  Fresh : 'Fresh',
+  Active : 'Active',
+  Passive : 'Passive'
+};
 
 /**
  * Updates state of object for frame.

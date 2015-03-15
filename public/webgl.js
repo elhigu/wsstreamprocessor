@@ -71,16 +71,26 @@ function init() {
   document.body.appendChild(statsFps.domElement);
 }
 
-/**
- * Tracked object should have at least:
- *  x, y, width, height and general direction + speed.
- */
-var trackedObjects = {};
-
 // when need more power, preallocate here 121*68 arrays for vertex info
 var vertexPool = [];
 // and 121*68 arrays for vertex groups
- var vertexGroupPool = [];
+var vertexGroupPool = [];
+
+
+// TODO: refactor to Group class....
+function generalDirectionOfGroup(group) {
+  // average should be calculated actually calculated from every vertex, instead of min / max...
+  var generalDirection = group.$minDirection +
+    Math.abs(group.$maxDirection - group.$minDirection)/2;
+  return generalDirection%1;
+}
+
+function generalSpeedOfGroup(group) {
+  // average should be calculated actually calculated from every vertex, instead of min / max...
+  var generalSpeed = group.$minSpeed +
+    Math.abs(group.$maxSpeed - group.$minSpeed)/2;
+  return generalSpeed;
+};
 
 function animate(chunk) {
 
