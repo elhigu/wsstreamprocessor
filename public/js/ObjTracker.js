@@ -15,14 +15,14 @@ ObjTracker.prototype.addFrame = function (groups) {
   var i;
 
   // update tracked objects, with groups of this frame
-  for (i = 0; i < groupsByObjIndex.length; i++) {
+  for (i = 0; i < this.trackedObjs.length; i++) {
     var newGroups = groupsByObjIndex[i];
     this.trackedObjs[i].updateState(newGroups);
   }
 
   // create new groups for all matches which didn't have earlier group
-  var newGroups = groupsByObjIndex[null] || [];
-  for (i = 0; i < newGroups; i++) {
+  var newGroups = groupsByObjIndex[-1] || [];
+  for (i = 0; i < newGroups.length; i++) {
     var newObj = new TrackedObj(newGroups[i]);
     this.trackedObjs.push(newObj);
   }
@@ -38,38 +38,49 @@ ObjTracker.prototype.addFrame = function (groups) {
 ObjTracker.prototype.worldMoved = function (dx, dy) {
 };
 
+/**
+ * Organize groups so that each object will have an array of matching groups for them.
+ *
+ * Unmatched groups are stored with key -1.
+ *
+ * @param groups
+ * @returns {Object|*}
+ * @private
+ */
 ObjTracker.prototype._groupGroupsToObjects = function (groups) {
-  return _.groupBy(groups, function (group) {
-    return _.find(this.trackedObjs, function (obj) {
-      return obj.isMatch(group);
-    }) || null;
-  });
-
   // TODO: if multiple matched, calculate match value to select to which object group belong
   // TODO: for now, just take first match
+  var self = this;
+  return _.groupBy(groups, function (group) {
+    return _.findIndex(self.trackedObjs, function (obj) {
+      return obj.isMatch(group);
+    });
+  });
 };
 
-/**
- * Tracked object is actual entity which is being recognized for tracking.
+/*****************************************************************************************
+ *
+ * TrackedObject represents one object which is being followed.
  *
  * When created, object is in 'Fresh' state, which means that if tracking is lost, it will
  * be discarded very aggressively.
  *
- * When object has been alive for enough time,
+ * When object has been alive for enough time, it will go to 'Active' state.
  *
- * state     Tracking state, New, Active, Passive
- * history   Ring buffer containing few latest object movement data
- *           (we can e.g. recognize acceleration, if we are about to stop or what..).
+ * When object is not moving / recognized anymore, it will go to 'Passive' state.
  *
- * History elements contain:
- *   direction    Direction where object was moving.
- *   speed        Speed of object.
- *   position.x   X position.
- *   position.y   Y position.
- *   width        Width.
- *   height       Height.
- *   size         Number of vertices in object.
+ * NOTE: object might need to store historical values about its state in future, but for now
+ *       all decisions are made only by data from last frame + some counters telling when
+ *       was the last positive match found...
  *
+ * Most important attributes:
+ *
+ * state        Tracking state, Fresh, Active, Passive
+ * direction    Direction where object was moving.
+ * speed        Speed of object.
+ * minPosition  {x,y} upper left corner.
+ * maxPosition  {x,y} lower right corner.
+ * size         Number of vertices in object.
  */
 function TrackedObj(group, options) {
   var defaults = {
@@ -112,7 +123,7 @@ TrackedObj.State = {
  * @param {Array} matchedGroups Groups, which were matched in this frame.
  * @returns True if object is ok, false if update function thinks that object should not be tracked anymore.
  */
-TrackedObj.prototype.upadateState = function (matchedGroups) {
+TrackedObj.prototype.updateState = function (matchedGroups) {
   // TODO: update all objects with data just recognized, fix position / size / direction etc. and
   // TODO: update latest verified match...
   //
@@ -123,9 +134,6 @@ TrackedObj.prototype.upadateState = function (matchedGroups) {
 
 /**
  * Returns true if group could match to object.
- *
- * @param group
- * @returns
  */
 // $minY, $maxY, $minX, $minY, $minSpeed, $maxSpeed, $minDirection, $maxDirection
 TrackedObj.prototype.isMatch = function (group) {
@@ -137,5 +145,5 @@ TrackedObj.prototype.isMatch = function (group) {
 
   // 2. for multiple matches calculate probability... for now, just return first match
   // TODO: then calculate match according to group size and position
-  return 0;
+  return true;
 };
