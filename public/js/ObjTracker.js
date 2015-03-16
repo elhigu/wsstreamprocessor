@@ -43,13 +43,13 @@ ObjTracker.prototype.worldMoved = function (dx, dy) {
  *
  * Unmatched groups are stored with key -1.
  *
+ * TODO: if multiple matched, calculate match value to select to which object group belong
+ *
  * @param groups
  * @returns {Object|*}
  * @private
  */
 ObjTracker.prototype._groupGroupsToObjects = function (groups) {
-  // TODO: if multiple matched, calculate match value to select to which object group belong
-  // TODO: for now, just take first match
   var self = this;
   return _.groupBy(groups, function (group) {
     return _.findIndex(self.trackedObjs, function (obj) {
@@ -119,6 +119,8 @@ TrackedObj.State = {
  * may decide, if object just stopped or vanished completely unexpectedly, e.g got under some other
  * obj.
  *
+ * TODO: if object seems to be leaving screen, set status 'LeavingArea', so we can drop it fast.
+ *
  * @param {Array} matchedGroups Groups, which were matched in this frame.
  * @returns True if object is ok, false if update function thinks that object should not be tracked anymore.
  */
@@ -128,29 +130,39 @@ TrackedObj.prototype.updateState = function (matchedGroups) {
   //
   // TODO: if group state is new (it havent got enough positive matches) and certain time
   // TODO: lost, then we just should dump the object.
-  // TODO:
 };
 
 /**
  * Returns true if group could match to object.
- * TODO: this is the next one to make future match correct..
  */
-// $minY, $maxY, $minX, $minY, $minSpeed, $maxSpeed, $minDirection, $maxDirection
 TrackedObj.prototype.isMatch = function (group) {
+  return this.isDirectionMatch(group) && this.isSpeedMatch(group) && this.isPositionMatch(group);
+};
 
-  // 1. thresholding by direction and position
-  // TODO: first check that group is inside with certain threshold, +
-  // TODO: some calculated shift depending on speed
-  // TODO: then check that direction is inside of groups direction
+/**
+ * TODO: one could actually make position threshold bigger to movement
+ *       direction if object speed is fast
+ */
+TrackedObj.prototype.isPositionMatch = function (group) {
+  var topLeftIn =
+    group.$minX > (this.minPosition.x - this.options.positionThreshold) &&
+    group.$minY > (this.minPosition.y - this.options.positionThreshold);
 
-  // 2. for multiple matches calculate probability... for now, just return first match
-  // TODO: then calculate match according to group size and position
+  var bottomRightIn =
+    group.$maxX < (this.maxPosition.x + this.options.positionThreshold) &&
+    group.$maxY < (this.maxPosition.y + this.options.positionThreshold);
 
-  return this.isDirectionMatch(group);
+  return topLeftIn && bottomRightIn;
 };
 
 TrackedObj.prototype.isDirectionMatch = function (group) {
   var minDirection = group.$minDirection-this.options.directionThreshold;
   var maxDirection = group.$maxDirection+this.options.directionThreshold;
   return this.direction > minDirection && this.direction < maxDirection;
+};
+
+TrackedObj.prototype.isSpeedMatch = function (group) {
+  var minSpeed = group.$minSpeed-this.options.speedThreshold;
+  var maxSpeed = group.$maxSpeed+this.options.speedThreshold;
+  return this.speed > minSpeed && this.speed < maxSpeed;
 };
