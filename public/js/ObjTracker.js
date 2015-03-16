@@ -83,7 +83,7 @@ ObjTracker.prototype._groupGroupsToObjects = function (groups) {
  * size         Number of vertices in object.
  */
 function TrackedObj(group, options) {
-  var defaults = {
+  var defaultOptions = {
     // Thresholds for changing object state
     dropFreshObjThreshold : 10,
     setActiveThreshold : 25*1,
@@ -93,11 +93,10 @@ function TrackedObj(group, options) {
     // Thresholds for matching group with object
     positionThreshold : 4,
     speedThreshold : 0.2,
-    directionThreshold : 0.2
+    directionThreshold : 0.1
   };
-  _.defaults(options, defaults);
 
-  this.options = options;
+  this.options = _.defaults(options || {}, defaultOptions);
 
   this.state = TrackedObj.State.Fresh;
   this.direction = generalDirectionOfGroup(group);
@@ -134,6 +133,7 @@ TrackedObj.prototype.updateState = function (matchedGroups) {
 
 /**
  * Returns true if group could match to object.
+ * TODO: this is the next one to make future match correct..
  */
 // $minY, $maxY, $minX, $minY, $minSpeed, $maxSpeed, $minDirection, $maxDirection
 TrackedObj.prototype.isMatch = function (group) {
@@ -145,5 +145,12 @@ TrackedObj.prototype.isMatch = function (group) {
 
   // 2. for multiple matches calculate probability... for now, just return first match
   // TODO: then calculate match according to group size and position
-  return true;
+
+  return this.isDirectionMatch(group);
+};
+
+TrackedObj.prototype.isDirectionMatch = function (group) {
+  var minDirection = group.$minDirection-this.options.directionThreshold;
+  var maxDirection = group.$maxDirection+this.options.directionThreshold;
+  return this.direction > minDirection && this.direction < maxDirection;
 };
