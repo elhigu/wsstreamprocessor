@@ -98,6 +98,8 @@ function TrackedObj(group, options) {
 
   this.options = _.defaults(options || {}, defaultOptions);
 
+  this.inactiveFrames = 0;
+  this.lifetimeFrames = 0;
   this.state = TrackedObj.State.Fresh;
   this.direction = generalDirectionOfGroup(group);
   this.speed = generalSpeedOfGroup(group);
@@ -122,14 +124,25 @@ TrackedObj.State = {
  * TODO: if object seems to be leaving screen, set status 'LeavingArea', so we can drop it fast.
  *
  * @param {Array} matchedGroups Groups, which were matched in this frame.
- * @returns True if object is ok, false if update function thinks that object should not be tracked anymore.
+ * @returns {Boolean} True if object is ok, false if update function thinks that object should not be tracked anymore.
  */
 TrackedObj.prototype.updateState = function (matchedGroups) {
-  // TODO: update all objects with data just recognized, fix position / size / direction etc. and
-  // TODO: update latest verified match...
-  //
-  // TODO: if group state is new (it havent got enough positive matches) and certain time
-  // TODO: lost, then we just should dump the object.
+  if (!_.isArray(matchedGroups) || _.isEmpty(matchedGroups)) {
+    this.inactiveFrames++;
+  } else {
+    this.inactiveFrames = 0;
+    this.minPosition.x = _(matchedGroups).pluck('$minX').min();
+    this.minPosition.y = _(matchedGroups).pluck('$minY').min();
+    this.maxPosition.x = _(matchedGroups).pluck('$maxX').max();
+    this.maxPosition.y = _(matchedGroups).pluck('$maxY').max();
+    this.size = _(matchedGroups).pluck('length').sum();
+    this.direction = _(matchedGroups).map(generalDirectionOfGroup).sum() / matchedGroups.length;
+    this.speed = _(matchedGroups).map(generalSpeedOfGroup).sum() / matchedGroups.length;
+  }
+  this.lifetimeFrames++;
+
+  // TODO: update state etc. values and check different lifetime thresholds if object should still be tracked...
+  return true;
 };
 
 /**
