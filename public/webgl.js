@@ -421,23 +421,16 @@ function animate(chunk) {
 
   // TODO: calculate average for direction and speed...
 
+  // ------------------------------- END OF VERTEX GROUP DETECTION -----------------------------------
+
   //
   // Create objects for groups for visualizing found blobs
   //
   visualizeVertexGroups(sortedGroups);
 
-  // ------------------------------- END OF VERTEX GROUP DETECTION -----------------------------------
 
   objTracker.addFrame(sortedGroups);
-
-  //
-  // TODO: Add here object tracking + their visualization
-  //
-  // The algorithm:
-  //
-  // 1. Do some probability analysis between last frame and current blobs which are counted ...
-  //
-
+  visualizeTrackedObjects(objTracker);
 
   render();
 
@@ -557,6 +550,10 @@ function visualizeVertexGroups(groups) {
     vertexGroupObjects.push(maxSpeedTriangleLine);
     scene.add(maxSpeedTriangleLine);
   }
+}
+
+function visualizeTrackedObjects(objTracker) {
+  // TODO: visualisation
 }
 
 /**
