@@ -9,6 +9,7 @@ var frames = [];
 var frameCount = 360;
 var fps = 25;
 
+// TODO: add arguments to tune frames to show
 var inputFile = null;
 for (var argIndex = 0; argIndex < process.argv.length; argIndex++) {
 	if (process.argv[argIndex] === "--in") {
@@ -20,15 +21,19 @@ if (inputFile) {
 	// input file given, expect fullhd and read frames from there
 	var fs = require("fs");
 	var motionVectors = fs.readFileSync(inputFile);
-	var currOffset = 0;
 	var frameSize = pixels*4;
-	frameCount = 0;
-	while ((currOffset+frameSize) < motionVectors.length) {
-		frames.push(motionVectors.slice(currOffset, frameSize));
-		currOffset += frameSize;
-		frameCount++;
+	var currOffset = 0;
+	var nextOffset = frameSize;
+	var dropFrames = 15;
+	while (nextOffset < motionVectors.length) {
+		if (dropFrames-- < 0) {
+			frames.push(motionVectors.slice(currOffset, nextOffset));
+		}
+		// console.error("Read Frame", currOffset, nextOffset, frames[frames.length-1].length);
+		currOffset = nextOffset;
+		nextOffset += frameSize;
 	}
-	console.error("Read frames:", frameCount);
+	console.error("Read frames:", frames.length);
 } else {
   // generate input frames
 	for (var i = 0; i < frameCount; i++) {
@@ -121,5 +126,9 @@ if (inputFile) {
 var frameCounter = 0;
 setInterval(function () {
   frameCounter++;
-  process.stdout.write(frames[frameCounter%frameCount]);
+  process.stdout.write(frames[frameCounter%frames.length]);
 }, Math.floor(1000/fps));
+
+setInterval(function () {
+	console.error("frames.length", frames.length, "FrameCounter:", frameCounter);
+}, 10000);
