@@ -552,8 +552,27 @@ function visualizeVertexGroups(groups) {
   }
 }
 
+var trackedObjects = {};
 function visualizeTrackedObjects(objTracker) {
-  // TODO: visualisation
+  _.each(objTracker.trackedObjs, function (item) {
+    var obj = trackedObjects[item.id];
+    if (!obj) {
+      // TODO: create obj and put to map
+      obj = {};
+      trackedObjects[item.id] = obj;
+    } else {
+      // TODO: update obj position / speed direction etc.
+    }
+    obj.lives = true;
+  });
+
+  _.each(_.values(trackedObjects), function (objToDraw) {
+    // TODO: draw item... if that kind of command is even necessary...
+    if (!objToDraw.lives) {
+      // TODO: delete object and never draw it anymore
+    }
+    objToDraw.lives = false;
+  });
 }
 
 /**

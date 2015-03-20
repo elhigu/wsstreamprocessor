@@ -82,7 +82,9 @@ ObjTracker.prototype._groupGroupsToObjects = function (groups) {
  * maxPosition  {x,y} lower right corner.
  * size         Number of vertices in object.
  */
+var id = 0;
 function TrackedObj(group, options) {
+  this.id = id++;
   var defaultOptions = {
     // Thresholds for changing object state
     dropFreshObjThreshold : 10,
