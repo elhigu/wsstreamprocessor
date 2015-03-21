@@ -557,8 +557,17 @@ function visualizeTrackedObjects(objTracker) {
   _.each(objTracker.trackedObjs, function (item) {
     var obj = trackedObjects[item.id];
     if (!obj) {
-      // TODO: create obj and put to map
       obj = {};
+      obj.groupBoundingBox = new THREE.Geometry();
+      obj.groupBoundingBox.vertices.push(
+        new THREE.Vector3(item.minPosition.x, item.minPosition.y, 70),
+        new THREE.Vector3(item.maxPosition.x, item.minPosition.y, 70),
+        new THREE.Vector3(item.maxPosition.x, item.maxPosition.y, 70),
+        new THREE.Vector3(item.minPosition.x, item.maxPosition.y, 70),
+        new THREE.Vector3(item.minPosition.x, item.minPosition.y, 70)
+      );
+      obj.line = new THREE.Line(obj.groupBoundingBox, lineMaterial);
+      scene.add(obj.line);
       trackedObjects[item.id] = obj;
     } else {
       // TODO: update obj position / speed direction etc.
