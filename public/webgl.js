@@ -579,6 +579,7 @@ function visualizeTrackedObjects(objTracker) {
     // TODO: draw item... if that kind of command is even necessary...
     if (!objToDraw.lives) {
       // TODO: delete object and never draw it anymore
+      scene.remove(obj.line);
     }
     objToDraw.lives = false;
   });
