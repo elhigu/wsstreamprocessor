@@ -11,9 +11,17 @@ var fps = 25;
 
 // TODO: add arguments to tune frames to show
 var inputFile = null;
+var dropFrames = 15;
+var loopFrames = null;
 for (var argIndex = 0; argIndex < process.argv.length; argIndex++) {
 	if (process.argv[argIndex] === "--in") {
 		inputFile = process.argv[argIndex+1];
+	}
+	if (process.argv[argIndex] === "--drop") {
+		dropFrames = parseInt(process.argv[argIndex+1]);
+	}
+	if (process.argv[argIndex] === "--loop") {
+		loopFrames = parseInt(process.argv[argIndex+1]);
 	}
 }
 
@@ -24,10 +32,11 @@ if (inputFile) {
 	var frameSize = pixels*4;
 	var currOffset = 0;
 	var nextOffset = frameSize;
-	var dropFrames = 15;
 	while (nextOffset < motionVectors.length) {
 		if (dropFrames-- < 0) {
-			frames.push(motionVectors.slice(currOffset, nextOffset));
+			if (loopFrames === null || loopFrames-- > 0) {
+				frames.push(motionVectors.slice(currOffset, nextOffset));
+			}
 		}
 		// console.error("Read Frame", currOffset, nextOffset, frames[frames.length-1].length);
 		currOffset = nextOffset;
