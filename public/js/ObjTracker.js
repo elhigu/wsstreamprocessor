@@ -93,9 +93,9 @@ function TrackedObj(group, options) {
     dropPassiveThreshold : 25*60*3,
 
     // Thresholds for matching group with object
-    positionThreshold : 4,
-    speedThreshold : 0.2,
-    directionThreshold : 0.1
+    positionThreshold : 20,
+    speedThreshold : 0.4,
+    directionThreshold : 0.4
   };
 
   this.options = _.defaults(options || {}, defaultOptions);

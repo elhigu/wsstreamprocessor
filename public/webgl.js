@@ -566,20 +566,43 @@ function visualizeTrackedObjects(objTracker) {
         new THREE.Vector3(item.minPosition.x, item.maxPosition.y, 70),
         new THREE.Vector3(item.minPosition.x, item.minPosition.y, 70)
       );
-      obj.line = new THREE.Line(obj.groupBoundingBox, lineMaterial);
+
+      var lineColor = new THREE.Color();
+      lineColor.setHSL(Math.random(), 0.5, 0.4);
+      obj.lineMaterial = new THREE.LineBasicMaterial( {
+        color: lineColor,
+        opacity: 0.7,
+        linewidth: 3,
+        depthWrite: false,
+        depthTest: false,
+        transparent: true
+      });
+
+      obj.line = new THREE.Line(obj.groupBoundingBox, obj.lineMaterial);
       scene.add(obj.line);
       trackedObjects[item.id] = obj;
     } else {
-      // TODO: update obj position / speed direction etc.
+      obj.groupBoundingBox.vertices[0].set(item.minPosition.x, item.minPosition.y, 70);
+      obj.groupBoundingBox.vertices[1].set(item.maxPosition.x, item.minPosition.y, 70);
+      obj.groupBoundingBox.vertices[2].set(item.maxPosition.x, item.maxPosition.y, 70);
+      obj.groupBoundingBox.vertices[3].set(item.minPosition.x, item.maxPosition.y, 70);
+      obj.groupBoundingBox.vertices[4].set(item.minPosition.x, item.minPosition.y, 70);
+      obj.groupBoundingBox.verticesNeedUpdate = true;
+      obj.groupBoundingBox.elementsNeedUpdate = true;
+      obj.groupBoundingBox.morphTargetsNeedUpdate = true;
+      obj.groupBoundingBox.uvsNeedUpdate = true;
+      obj.groupBoundingBox.normalsNeedUpdate = true;
+      obj.groupBoundingBox.colorsNeedUpdate = true;
+      obj.groupBoundingBox.tangentsNeedUpdate = true;
+      // TODO: update obj speed direction etc.
     }
     obj.lives = true;
   });
 
   _.each(_.values(trackedObjects), function (objToDraw) {
-    // TODO: draw item... if that kind of command is even necessary...
     if (!objToDraw.lives) {
       // TODO: delete object and never draw it anymore
-      scene.remove(obj.line);
+      scene.remove(objToDraw.line);
     }
     objToDraw.lives = false;
   });
