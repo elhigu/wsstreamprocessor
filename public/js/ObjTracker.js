@@ -13,12 +13,21 @@ function ObjTracker(options) {
 ObjTracker.prototype.addFrame = function (groups) {
   var groupsByObjIndex = this._groupGroupsToObjects(groups);
   var i;
+  var self = this;
 
+  var objectsToDrop = [];
   // update tracked objects, with groups of this frame
   for (i = 0; i < this.trackedObjs.length; i++) {
     var newGroups = groupsByObjIndex[i];
-    this.trackedObjs[i].updateState(newGroups);
+    if (!this.trackedObjs[i].updateState(newGroups)) {
+      objectsToDrop.unshift(i);
+    }
   }
+
+  // indices are in reverse order, last is first
+  _.each(objectsToDrop, function (objIndex) {
+    self.trackedObjs.splice(objIndex,1);
+  });
 
   // create new groups for all matches which didn't have earlier group
   var newGroups = groupsByObjIndex[-1] || [];
@@ -101,7 +110,7 @@ function TrackedObj(group, options) {
   this.options = _.defaults(options || {}, defaultOptions);
 
   this.inactiveFrames = 0;
-  this.lifetimeFrames = 0;
+  this.activeFrames = 0;
   this.state = TrackedObj.State.Fresh;
   this.direction = generalDirectionOfGroup(group);
   this.speed = generalSpeedOfGroup(group);
@@ -131,8 +140,10 @@ TrackedObj.State = {
 TrackedObj.prototype.updateState = function (matchedGroups) {
   if (!_.isArray(matchedGroups) || _.isEmpty(matchedGroups)) {
     this.inactiveFrames++;
+    this.activeFrames = 0;
   } else {
     this.inactiveFrames = 0;
+    this.activeFrames++;
     this.minPosition.x = _(matchedGroups).pluck('$minX').min();
     this.minPosition.y = _(matchedGroups).pluck('$minY').min();
     this.maxPosition.x = _(matchedGroups).pluck('$maxX').max();
@@ -141,10 +152,30 @@ TrackedObj.prototype.updateState = function (matchedGroups) {
     this.direction = _(matchedGroups).map(generalDirectionOfGroup).sum() / matchedGroups.length;
     this.speed = _(matchedGroups).map(generalSpeedOfGroup).sum() / matchedGroups.length;
   }
-  this.lifetimeFrames++;
 
-  // TODO: update state etc. values and check different lifetime thresholds if object should still be tracked...
-  return true;
+  // rough decision if tracked object should be dropped / state should be changed
+  if (this.activeFrames > this.options.setActiveThreshold) {
+    this.state = TrackedObj.State.Active;
+  }
+  var shouldBeDropped = false;
+  switch (this.state) {
+    case TrackedObj.State.Fresh:
+      if (this.inactiveFrames > this.options.dropFreshObjThreshold) {
+        shouldBeDropped = true;
+      }
+      break;
+    case TrackedObj.State.Passive:
+      if (this.inactiveFrames > this.options.dropPassiveThreshold) {
+        shouldBeDropped = true;
+      }
+      break;
+    case TrackedObj.State.Active:
+      if (this.inactiveFrames > this.options.setPassiveThreshold) {
+        this.state = TrackedObj.State.Passive;
+      }
+      break;
+  }
+  return !shouldBeDropped;
 };
 
 /**

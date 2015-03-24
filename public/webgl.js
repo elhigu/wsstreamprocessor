@@ -423,13 +423,10 @@ function animate(chunk) {
 
   // ------------------------------- END OF VERTEX GROUP DETECTION -----------------------------------
 
-  //
-  // Create objects for groups for visualizing found blobs
-  //
-  visualizeVertexGroups(sortedGroups);
-
-
   objTracker.addFrame(sortedGroups);
+
+  // TODO: add ui controls to select which visualizations to show...
+  visualizeVertexGroups(sortedGroups);
   visualizeTrackedObjects(objTracker);
 
   render();
@@ -552,10 +549,10 @@ function visualizeVertexGroups(groups) {
   }
 }
 
-var trackedObjects = {};
+var trackedObjectsGraphics = {};
 function visualizeTrackedObjects(objTracker) {
   _.each(objTracker.trackedObjs, function (item) {
-    var obj = trackedObjects[item.id];
+    var obj = trackedObjectsGraphics[item.id];
     if (!obj) {
       obj = {};
       obj.groupBoundingBox = new THREE.Geometry();
@@ -580,7 +577,7 @@ function visualizeTrackedObjects(objTracker) {
 
       obj.line = new THREE.Line(obj.groupBoundingBox, obj.lineMaterial);
       scene.add(obj.line);
-      trackedObjects[item.id] = obj;
+      trackedObjectsGraphics[item.id] = obj;
     } else {
       obj.groupBoundingBox.vertices[0].set(item.minPosition.x, item.minPosition.y, 70);
       obj.groupBoundingBox.vertices[1].set(item.maxPosition.x, item.minPosition.y, 70);
@@ -588,23 +585,28 @@ function visualizeTrackedObjects(objTracker) {
       obj.groupBoundingBox.vertices[3].set(item.minPosition.x, item.maxPosition.y, 70);
       obj.groupBoundingBox.vertices[4].set(item.minPosition.x, item.minPosition.y, 70);
       obj.groupBoundingBox.verticesNeedUpdate = true;
-      obj.groupBoundingBox.elementsNeedUpdate = true;
-      obj.groupBoundingBox.morphTargetsNeedUpdate = true;
-      obj.groupBoundingBox.uvsNeedUpdate = true;
-      obj.groupBoundingBox.normalsNeedUpdate = true;
-      obj.groupBoundingBox.colorsNeedUpdate = true;
-      obj.groupBoundingBox.tangentsNeedUpdate = true;
+
+      // TODO: update color according to state
+
+      //obj.groupBoundingBox.elementsNeedUpdate = true;
+      //obj.groupBoundingBox.morphTargetsNeedUpdate = true;
+      //obj.groupBoundingBox.uvsNeedUpdate = true;
+      //obj.groupBoundingBox.normalsNeedUpdate = true;
+      //obj.groupBoundingBox.colorsNeedUpdate = true;
+      //obj.groupBoundingBox.tangentsNeedUpdate = true;
       // TODO: update obj speed direction etc.
     }
     obj.lives = true;
   });
 
-  _.each(_.values(trackedObjects), function (objToDraw) {
-    if (!objToDraw.lives) {
-      // TODO: delete object and never draw it anymore
-      scene.remove(objToDraw.line);
+  _.each(trackedObjectsGraphics, function (objToDraw, key) {
+    if (objToDraw !== null) {
+      if (!objToDraw.lives) {
+        scene.remove(objToDraw.line);
+        trackedObjectsGraphics[key] = null;
+      }
+      objToDraw.lives = false;
     }
-    objToDraw.lives = false;
   });
 }
 
