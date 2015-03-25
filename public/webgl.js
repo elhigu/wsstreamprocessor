@@ -458,7 +458,7 @@ function animate(chunk) {
 var lineMaterial = new THREE.LineBasicMaterial( {
   color: 0xff0000,
   opacity: 0.7,
-  linewidth: 10,
+  linewidth: 1,
   depthWrite: false,
   depthTest: false,
   transparent: true
@@ -467,7 +467,7 @@ var lineMaterial = new THREE.LineBasicMaterial( {
 var minMovementMaterial = new THREE.LineBasicMaterial( {
   color: 0x0000ff,
   opacity: 0.7,
-  linewidth: 3,
+  linewidth: 1,
   depthWrite: false,
   depthTest: false,
   transparent: true
@@ -476,7 +476,7 @@ var minMovementMaterial = new THREE.LineBasicMaterial( {
 var maxMovementMaterial = new THREE.LineBasicMaterial( {
   color: 0x00ff00,
   opacity: 0.7,
-  linewidth: 3,
+  linewidth: 1,
   depthWrite: false,
   depthTest: false,
   transparent: true
