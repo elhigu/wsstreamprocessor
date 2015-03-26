@@ -47,7 +47,22 @@ if (inputFile) {
 	}
 	console.error("Read frames:", frames.length);
 } else {
-  // generate input frames
+	generateMotionVectorFrames();
+}
+
+// write frames to stdout
+var frameCounter = 0;
+setInterval(function () {
+  frameCounter++;
+  process.stdout.write(frames[frameCounter%frames.length]);
+}, Math.floor(1000/fps));
+
+setInterval(function () {
+	console.error("frames.length", frames.length, "FrameCounter:", frameCounter);
+}, 10000);
+
+function generateMotionVectorFrames() {
+	// generate input frames
 	for (var i = 0; i < frameCount; i++) {
 		var frame = new Buffer(pixels*4);
 		frames.push(frame);
@@ -133,14 +148,3 @@ if (inputFile) {
 		}
 	}
 }
-
-// write frames to stdout
-var frameCounter = 0;
-setInterval(function () {
-  frameCounter++;
-  process.stdout.write(frames[frameCounter%frames.length]);
-}, Math.floor(1000/fps));
-
-setInterval(function () {
-	console.error("frames.length", frames.length, "FrameCounter:", frameCounter);
-}, 10000);
