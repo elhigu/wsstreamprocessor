@@ -23,6 +23,9 @@ for (var argIndex = 0; argIndex < process.argv.length; argIndex++) {
 	if (process.argv[argIndex] === "--loop") {
 		loopFrames = parseInt(process.argv[argIndex+1]);
 	}
+	if (process.argv[argIndex] === "--fps") {
+		fps = parseInt(process.argv[argIndex+1]);
+	}
 }
 
 if (inputFile) {

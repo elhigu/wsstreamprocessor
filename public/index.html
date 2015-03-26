@@ -61,13 +61,25 @@
       socket.on('newFrame', function(msg) {
         frameQueue.unshift(msg);
       });
+      socket.on('setFps', function(msg) {
+        restartFrameConsumer(msg)
+      });
 
-      // play frames from buffer a bit faster than 25 fps
-      setInterval(function () {
-        if (frameQueue.length > 0) {
-          animate(frameQueue.pop());
+      var interval = null;
+      function restartFrameConsumer(fps) {
+        if (interval) {
+          clearInterval(interval);
         }
-      }, 38);
+        // play frames from buffer a bit faster than given fps
+        interval = setInterval(function () {
+          if (frameQueue.length > 0) {
+            animate(frameQueue.pop());
+          }
+        }, Math.floor(900/fps));
+      }
+
+      // start with 25 fps by default
+      restartFrameConsumer(25);
     </script>
   </body>
 </html>

@@ -60,6 +60,7 @@ ObjTracker.prototype.worldMoved = function (dx, dy) {
  */
 ObjTracker.prototype._groupGroupsToObjects = function (groups) {
   var self = this;
+  // TODO: next step to prevent loosing track
   return _.groupBy(groups, function (group) {
     return _.findIndex(self.trackedObjs, function (obj) {
       return obj.isMatch(group);
@@ -102,9 +103,9 @@ function TrackedObj(group, options) {
     dropPassiveThreshold : 25*60*3,
 
     // Thresholds for matching group with object
-    positionThreshold : 20,
-    speedThreshold : 0.4,
-    directionThreshold : 0.4
+    positionThreshold : 10,
+    speedThreshold : 0.3,
+    directionThreshold : 0.3
   };
 
   this.options = _.defaults(options || {}, defaultOptions);

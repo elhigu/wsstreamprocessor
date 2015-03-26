@@ -6,8 +6,15 @@ app.use(express.static(__dirname + '/public'));
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 
+var fps;
+for (var argIndex = 0; argIndex < process.argv.length; argIndex++) {
+  if (process.argv[argIndex] === "--fps") {
+    fps = parseInt(process.argv[argIndex+1]);
+  }
+}
 
 io.on('connection', function(socket){
+  socket.emit('setFps', fps);
   console.log('a user connected TODO: bind here command channel stuff and tell resolution etc.');
 	/*
 	struct motion_vector {
