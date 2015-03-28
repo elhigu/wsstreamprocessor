@@ -589,7 +589,7 @@ function visualizeTrackedObjects(objTracker) {
       // TODO: tracked object active / inactive counters...
       if (item.state === 'Active') {
         obj.lineMaterial.color = new THREE.Color();
-        obj.lineMaterial.color.setHSL(obj.hue, 1.0, 0.7);
+        obj.lineMaterial.color.setHSL(obj.hue, 1.0, Math.min(Math.max(item.liveness / 25, 0.25), 0.8));
       } else if (item.state === 'Passive') {
         obj.lineMaterial.color = new THREE.Color();
         obj.lineMaterial.color.setHSL(obj.hue, 0.4, 0.25);
