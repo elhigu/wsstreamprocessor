@@ -585,6 +585,8 @@ function visualizeTrackedObjects(objTracker) {
       obj.groupBoundingBox.verticesNeedUpdate = true;
       obj.groupBoundingBox.dynamic = true;
 
+      // TODO: set more stairless control of width and color depending on
+      // TODO: tracked object active / inactive counters...
       if (item.state === 'Active') {
         obj.lineMaterial.color = new THREE.Color();
         obj.lineMaterial.color.setHSL(obj.hue, 1.0, 0.7);

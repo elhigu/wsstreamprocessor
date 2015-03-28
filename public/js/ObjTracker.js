@@ -52,19 +52,23 @@ ObjTracker.prototype.worldMoved = function (dx, dy) {
  *
  * Unmatched groups are stored with key -1.
  *
- * TODO: if multiple matched, calculate match value to select to which object group belong
- *
  * @param groups
  * @returns {Object|*}
  * @private
  */
 ObjTracker.prototype._groupGroupsToObjects = function (groups) {
   var self = this;
-  // TODO: next step to prevent loosing track
   return _.groupBy(groups, function (group) {
-    return _.findIndex(self.trackedObjs, function (obj) {
-      return obj.isMatch(group);
-    });
+    var obj = _(self.trackedObjs)
+      .map(function (obj, index) {
+        obj.index = index;
+        return obj;
+      })
+      .max(function (obj) {
+        obj.tempMatchStrength = obj.matchStrength(group);
+        return obj.tempMatchStrength;
+      });
+      return _.isObject(obj) && obj.tempMatchStrength > 0 && obj.index || -1;
   });
 };
 
@@ -110,6 +114,7 @@ function TrackedObj(group, options) {
 
   this.options = _.defaults(options || {}, defaultOptions);
 
+  this.liveness = 0;
   this.inactiveFrames = 0;
   this.activeFrames = 0;
   this.state = TrackedObj.State.Fresh;
@@ -140,9 +145,11 @@ TrackedObj.State = {
  */
 TrackedObj.prototype.updateState = function (matchedGroups) {
   if (!_.isArray(matchedGroups) || _.isEmpty(matchedGroups)) {
+    this.liveness--;
     this.inactiveFrames++;
     this.activeFrames = 0;
   } else {
+    this.liveness++;
     this.inactiveFrames = 0;
     this.activeFrames++;
     this.minPosition.x = _(matchedGroups).pluck('$minX').min();
@@ -157,6 +164,8 @@ TrackedObj.prototype.updateState = function (matchedGroups) {
   // rough decision if tracked object should be dropped / state should be changed
   if (this.activeFrames > this.options.setActiveThreshold) {
     this.state = TrackedObj.State.Active;
+    // reset liveness status to positive if we came out from Passive mode
+    this.liveness = Math.max(this.liveness, 1);
   }
   var shouldBeDropped = false;
   switch (this.state) {
@@ -187,8 +196,16 @@ TrackedObj.prototype.isMatch = function (group) {
 };
 
 /**
- * TODO: one could actually make position threshold bigger to movement
- *       direction if object speed is fast
+ * Match strength
+ */
+TrackedObj.prototype.matchStrength = function (group) {
+  return this.isMatch(group) && (
+      1 // TODO: calculate how good match was...
+    ) || 0;
+};
+
+/**
+ * TODO: one could actually make position threshold bigger to movement direction if object speed is fast
  */
 TrackedObj.prototype.isPositionMatch = function (group) {
   var topLeftIn =
@@ -212,4 +229,8 @@ TrackedObj.prototype.isSpeedMatch = function (group) {
   var minSpeed = group.$minSpeed-this.options.speedThreshold;
   var maxSpeed = group.$maxSpeed+this.options.speedThreshold;
   return this.speed > minSpeed && this.speed < maxSpeed;
+};
+
+// TODO: Track out group size and position and recognize if object actually left screen
+TrackedObj.prototype.isLeavingScreen = function () {
 };
