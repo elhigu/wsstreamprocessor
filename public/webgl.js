@@ -362,10 +362,10 @@ function animate(chunk) {
   for (var plane in vertexBuckets) {
     var oldGroupPlane = vertexBuckets[plane];
 
-    // filter out groups of less than 4 vertices
+    // filter out groups of less than 2 vertices
     var newGroupPlane = oldGroupPlane.concat(oldGroupPlane.$finishedGroups);
     for (var groupIndex = 0; groupIndex < newGroupPlane.length; groupIndex++) {
-      if (newGroupPlane[groupIndex].length < 4) {
+      if (newGroupPlane[groupIndex].length < 2) {
         newGroupPlane.splice(groupIndex,1);
         groupIndex--;
       }
@@ -589,7 +589,7 @@ function visualizeTrackedObjects(objTracker) {
       // TODO: tracked object active / inactive counters...
       if (item.state === 'Active') {
         obj.lineMaterial.color = new THREE.Color();
-        obj.lineMaterial.color.setHSL(obj.hue, 1.0, Math.min(Math.max(item.liveness / 25, 0.25), 0.8));
+        obj.lineMaterial.color.setHSL(obj.hue, 1.0, Math.min(Math.max(item.liveness / 25, 0.4), 0.8));
       } else if (item.state === 'Passive') {
         obj.lineMaterial.color = new THREE.Color();
         obj.lineMaterial.color.setHSL(obj.hue, 0.4, 0.25);

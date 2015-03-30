@@ -101,15 +101,16 @@ function TrackedObj(group, options) {
   this.id = id++;
   var defaultOptions = {
     // Thresholds for changing object state
-    dropFreshObjThreshold : 10,
-    setActiveThreshold : 25*1,
+    dropFreshObjThreshold : 5,
+    setActiveThreshold : 10,
     setPassiveThreshold : 25*5,
-    dropPassiveThreshold : 25*60*3,
+    dropPassiveThreshold : 25*60,
 
     // Thresholds for matching group with object
-    positionThreshold : 10,
+    positionThreshold : 20,
     speedThreshold : 0.3,
-    directionThreshold : 0.3
+    directionThreshold : 0.3,
+    similarityThreshold : 10000
   };
 
   this.options = _.defaults(options || {}, defaultOptions);
@@ -190,18 +191,36 @@ TrackedObj.prototype.updateState = function (matchedGroups) {
 
 /**
  * Returns true if group could match to object.
+ *
+ * Now we think there is possible match, if position in inside threshold
  */
 TrackedObj.prototype.isMatch = function (group) {
-  return this.isDirectionMatch(group) && this.isSpeedMatch(group) && this.isPositionMatch(group);
+  return this.isPositionMatch(group);
 };
 
 /**
- * Match strength
+ * Match strength...
+ *
+ * We consider speed, direction and group size (number of moving vertices in group)
+ * to be deciding factors.
+ *
+ * Position is pretty hard to utilize, due to nature of motion vector data,
+ * where center point of object might change a lot depending how moving vertices
+ * are positioned and the noise... someone could make that data useful to be
+ * considered here though.
+ *
  */
 TrackedObj.prototype.matchStrength = function (group) {
-  return this.isMatch(group) && (
-      1 // TODO: calculate how good match was...
-    ) || 0;
+  if (this.isMatch(group)) {
+    var sizeDiff = this.sizeDifference(group);
+    var difference =
+      this.directionDifference(group)*
+      this.speedDifference(group)*
+      sizeDiff*sizeDiff;
+    var similarity = 1/difference;
+    return similarity > this.options.similarityThreshold ? similarity : 0;
+  }
+  return 0;
 };
 
 /**
@@ -229,6 +248,21 @@ TrackedObj.prototype.isSpeedMatch = function (group) {
   var minSpeed = group.$minSpeed-this.options.speedThreshold;
   var maxSpeed = group.$maxSpeed+this.options.speedThreshold;
   return this.speed > minSpeed && this.speed < maxSpeed;
+};
+
+TrackedObj.prototype.directionDifference = function (group) {
+  var dir1 = this.direction;
+  var dir2 = generalDirectionOfGroup(group);
+  var maybeThis = Math.abs(dir1-dir2);
+  return maybeThis <= 0.5 ? maybeThis : (1-maybeThis);
+};
+
+TrackedObj.prototype.speedDifference = function (group) {
+  return Math.abs(generalSpeedOfGroup(group) - this.speed)/80;
+};
+
+TrackedObj.prototype.sizeDifference = function (group) {
+  return Math.abs(group.length - this.size)/40;
 };
 
 // TODO: Track out group size and position and recognize if object actually left screen
