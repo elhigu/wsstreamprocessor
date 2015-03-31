@@ -52,14 +52,23 @@ if (inputFile) {
 
 // write frames to stdout
 var frameCounter = 0;
+var takeStep = null;
 setInterval(function () {
-  frameCounter++;
-  process.stdout.write(frames[frameCounter%frames.length]);
+	if (takeStep === null || takeStep) {
+		frameCounter++;
+		process.stdout.write(frames[frameCounter%frames.length]);
+		takeStep = false;
+	}
 }, Math.floor(1000/fps));
 
 setInterval(function () {
 	console.error("frames.length", frames.length, "FrameCounter:", frameCounter);
 }, 10000);
+
+process.on('SIGUSR2', function() {
+	console.error('Got SIGUSR2, give signal again to proceed to next frame...');
+	takeStep = true;
+});
 
 function generateMotionVectorFrames() {
 	// generate input frames
