@@ -57,7 +57,9 @@ setInterval(function () {
 	if (takeStep === null || takeStep) {
 		frameCounter++;
 		process.stdout.write(frames[frameCounter%frames.length]);
-		takeStep = false;
+		if (takeStep !== null) {
+			takeStep = false;
+		}
 	}
 }, Math.floor(1000/fps));
 
