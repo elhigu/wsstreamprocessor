@@ -12,7 +12,7 @@ var statsMs = new Stats();
 statsMs.setMode(1);
 
 var cameraZMax = 2000;
-
+var SCALE_DEPTH = 0.3;
 var objTracker = new ObjTracker();
 
 
@@ -285,7 +285,7 @@ function animate(chunk) {
       vertexObj.direction = hue;
       vertexObj.speed = lightness;
       movingVerticesCount++;
-      z = (hue*10*5 + lightness*10)*0.5;
+      z = (hue*10*5 + lightness*10)*0.5*SCALE_DEPTH;
       roundZ = (Math.round(hue*16)*10) + Math.round(lightness*10);
       addVertexTo2dGroup(roundZ, vertexObj);
     }
@@ -495,11 +495,11 @@ function visualizeVertexGroups(groups) {
     var group = groups[groupIndex];
     var groupBoundingBox = new THREE.Geometry();
     groupBoundingBox.vertices.push(
-      new THREE.Vector3(group.$minX, group.$minY, 30),
-      new THREE.Vector3(group.$maxX, group.$minY, 30),
-      new THREE.Vector3(group.$maxX, group.$maxY, 30),
-      new THREE.Vector3(group.$minX, group.$maxY, 30),
-      new THREE.Vector3(group.$minX, group.$minY, 30)
+      new THREE.Vector3(group.$minX, group.$minY, 30*SCALE_DEPTH),
+      new THREE.Vector3(group.$maxX, group.$minY, 30*SCALE_DEPTH),
+      new THREE.Vector3(group.$maxX, group.$maxY, 30*SCALE_DEPTH),
+      new THREE.Vector3(group.$minX, group.$maxY, 30*SCALE_DEPTH),
+      new THREE.Vector3(group.$minX, group.$minY, 30*SCALE_DEPTH)
     );
     var line = new THREE.Line(groupBoundingBox, lineMaterial);
     vertexGroupObjects.push(line);
@@ -521,10 +521,10 @@ function visualizeVertexGroups(groups) {
     var minSpeedEndY = centerY + endAngleY * group.$minSpeed;
     var minSpeedTriangle = new THREE.Geometry();
     minSpeedTriangle.vertices.push(
-      new THREE.Vector3(centerX, centerY, 31),
-      new THREE.Vector3(minSpeedStartX, minSpeedStartY, 31),
-      new THREE.Vector3(minSpeedEndX, minSpeedEndY, 31),
-      new THREE.Vector3(centerX, centerY, 31)
+      new THREE.Vector3(centerX, centerY, 31*SCALE_DEPTH),
+      new THREE.Vector3(minSpeedStartX, minSpeedStartY, 31*SCALE_DEPTH),
+      new THREE.Vector3(minSpeedEndX, minSpeedEndY, 31*SCALE_DEPTH),
+      new THREE.Vector3(centerX, centerY, 31*SCALE_DEPTH)
     );
     var minSpeedTriangleLine = new THREE.Line(minSpeedTriangle, minMovementMaterial);
     vertexGroupObjects.push(minSpeedTriangleLine);
@@ -537,10 +537,10 @@ function visualizeVertexGroups(groups) {
     var maxSpeedEndY = centerY + endAngleY * group.$maxSpeed;
     var maxSpeedTriangle = new THREE.Geometry();
     maxSpeedTriangle.vertices.push(
-      new THREE.Vector3(centerX, centerY, 31),
-      new THREE.Vector3(maxSpeedStartX, maxSpeedStartY, 31),
-      new THREE.Vector3(maxSpeedEndX, maxSpeedEndY, 31),
-      new THREE.Vector3(centerX, centerY, 31)
+      new THREE.Vector3(centerX, centerY, 31*SCALE_DEPTH),
+      new THREE.Vector3(maxSpeedStartX, maxSpeedStartY, 31*SCALE_DEPTH),
+      new THREE.Vector3(maxSpeedEndX, maxSpeedEndY, 31*SCALE_DEPTH),
+      new THREE.Vector3(centerX, centerY, 31*SCALE_DEPTH)
     );
 
     var maxSpeedTriangleLine = new THREE.Line(maxSpeedTriangle, maxMovementMaterial);
@@ -557,11 +557,11 @@ function visualizeTrackedObjects(objTracker) {
       obj = {};
       obj.groupBoundingBox = new THREE.Geometry();
       obj.groupBoundingBox.vertices.push(
-        new THREE.Vector3(item.minPosition.x, item.minPosition.y, 30),
-        new THREE.Vector3(item.maxPosition.x, item.minPosition.y, 30),
-        new THREE.Vector3(item.maxPosition.x, item.maxPosition.y, 30),
-        new THREE.Vector3(item.minPosition.x, item.maxPosition.y, 30),
-        new THREE.Vector3(item.minPosition.x, item.minPosition.y, 30)
+        new THREE.Vector3(item.minPosition.x, item.minPosition.y, 32*SCALE_DEPTH),
+        new THREE.Vector3(item.maxPosition.x, item.minPosition.y, 32*SCALE_DEPTH),
+        new THREE.Vector3(item.maxPosition.x, item.maxPosition.y, 32*SCALE_DEPTH),
+        new THREE.Vector3(item.minPosition.x, item.maxPosition.y, 32*SCALE_DEPTH),
+        new THREE.Vector3(item.minPosition.x, item.minPosition.y, 32*SCALE_DEPTH)
       );
       obj.hue = Math.random();
       obj.lineMaterial = new THREE.LineBasicMaterial({
@@ -577,11 +577,11 @@ function visualizeTrackedObjects(objTracker) {
       scene.add(obj.line);
       trackedObjectsGraphics[item.id] = obj;
     } else {
-      obj.groupBoundingBox.vertices[0].set(item.minPosition.x-0.5, item.minPosition.y-0.5, 30);
-      obj.groupBoundingBox.vertices[1].set(item.maxPosition.x+0.5, item.minPosition.y-0.5, 30);
-      obj.groupBoundingBox.vertices[2].set(item.maxPosition.x+0.5, item.maxPosition.y+0.5, 30);
-      obj.groupBoundingBox.vertices[3].set(item.minPosition.x-0.5, item.maxPosition.y+0.5, 30);
-      obj.groupBoundingBox.vertices[4].set(item.minPosition.x-0.5, item.minPosition.y-0.5, 30);
+      obj.groupBoundingBox.vertices[0].set(item.minPosition.x-0.5, item.minPosition.y-0.5, 32*SCALE_DEPTH);
+      obj.groupBoundingBox.vertices[1].set(item.maxPosition.x+0.5, item.minPosition.y-0.5, 32*SCALE_DEPTH);
+      obj.groupBoundingBox.vertices[2].set(item.maxPosition.x+0.5, item.maxPosition.y+0.5, 32*SCALE_DEPTH);
+      obj.groupBoundingBox.vertices[3].set(item.minPosition.x-0.5, item.maxPosition.y+0.5, 32*SCALE_DEPTH);
+      obj.groupBoundingBox.vertices[4].set(item.minPosition.x-0.5, item.minPosition.y-0.5, 32*SCALE_DEPTH);
       obj.groupBoundingBox.verticesNeedUpdate = true;
       obj.groupBoundingBox.dynamic = true;
 
@@ -621,6 +621,8 @@ function visualizeTrackedObjects(objTracker) {
 
 /**
  * Mouse controls
+ *
+ * TODO: capture pinchzoom...
  */
 var cameraAngleY = 0;  // - PI..PI
 var cameraAngleX = 0;  // - PI..PI
