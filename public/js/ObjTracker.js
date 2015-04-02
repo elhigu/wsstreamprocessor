@@ -153,10 +153,11 @@ TrackedObj.prototype.updateState = function (matchedGroups) {
     this.liveness++;
     this.inactiveFrames = 0;
     this.activeFrames++;
-    this.minPosition.x = _(matchedGroups).pluck('$minX').min();
-    this.minPosition.y = _(matchedGroups).pluck('$minY').min();
-    this.maxPosition.x = _(matchedGroups).pluck('$maxX').max();
-    this.maxPosition.y = _(matchedGroups).pluck('$maxY').max();
+    // limit speed of growing / shrinking by setting new position to be average of old / new
+    this.minPosition.x = (_(matchedGroups).pluck('$minX').min() + this.minPosition.x)/2;
+    this.minPosition.y = (_(matchedGroups).pluck('$minY').min() + this.minPosition.y)/2;
+    this.maxPosition.x = (_(matchedGroups).pluck('$maxX').max() + this.maxPosition.x)/2;
+    this.maxPosition.y = (_(matchedGroups).pluck('$maxY').max() + this.maxPosition.y)/2;
     this.size = _(matchedGroups).pluck('length').sum();
     this.direction = _(matchedGroups).map(generalDirectionOfGroup).sum() / matchedGroups.length;
     this.speed = _(matchedGroups).map(generalSpeedOfGroup).sum() / matchedGroups.length;
