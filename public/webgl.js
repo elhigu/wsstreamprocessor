@@ -11,7 +11,8 @@ var statsFps = new Stats();
 var statsMs = new Stats();
 statsMs.setMode(1);
 
-var cameraZMax = 2000;
+var cameraZMax = 1000;
+var cameraZInit = 500;
 var SCALE_DEPTH = 0.3;
 var objTracker = new ObjTracker();
 
@@ -23,7 +24,7 @@ function init() {
   scene = new THREE.Scene();
 
   camera = new THREE.PerspectiveCamera(10, 1920 / 1080, 5, cameraZMax*2);
-  camera.position.z = cameraZMax;
+  camera.position.z = cameraZInit;
 
   geometry = new THREE.BufferGeometry();
 
@@ -425,9 +426,12 @@ function animate(chunk) {
 
   objTracker.addFrame(sortedGroups);
 
-  // TODO: add ui controls to select which visualizations to show...
-  visualizeVertexGroups(sortedGroups);
-  visualizeTrackedObjects(objTracker);
+  if (document.getElementById('showBlobsCheckbox').checked) {
+    visualizeVertexGroups(sortedGroups);
+  }
+  if (document.getElementById('showObjsCheckbox').checked) {
+    visualizeTrackedObjects(objTracker);
+  }
 
   render();
 
@@ -436,19 +440,6 @@ function animate(chunk) {
   //
   statsMs.end();
   statsFps.update();
-  document.getElementById('movingVertices').textContent = movingVerticesCount;
-
-  // generate group info strings
-  var groupInfo = [];
-  for (var groupIndex = 0; groupIndex < sortedGroups.length; groupIndex++) {
-    var group = sortedGroups[groupIndex];
-    groupInfo.push(['<br/><span class="infoLabel">==> Group #', groupIndex, ' Vertices</spane>: ', group.length].join(''));
-    groupInfo.push(['<br/><span class="infoLabel">: : : : > $minDirection</spane>: ', group.$minDirection.toPrecision(4)].join(''));
-    groupInfo.push(['<br/><span class="infoLabel">: : : : > $maxDirection</spane>: ', group.$maxDirection.toPrecision(4)].join(''));
-    groupInfo.push(['<br/><span class="infoLabel">: : : : > $minSpeed</spane>: ', group.$minSpeed.toPrecision(4)].join(''));
-    groupInfo.push(['<br/><span class="infoLabel">: : : : > $maxSpeed</spane>: ', group.$maxSpeed.toPrecision(4)].join(''));
-  }
-  document.getElementById('groupingInfo').innerHTML = groupInfo.join('');
 }
 
 //
@@ -585,7 +576,7 @@ function visualizeTrackedObjects(objTracker) {
       obj.groupBoundingBox.verticesNeedUpdate = true;
       obj.groupBoundingBox.dynamic = true;
 
-      // TODO: set more stairless control of width and color depending on
+      // TODO: set more control of width and color depending on
       // TODO: tracked object active / inactive counters...
       if (item.state === 'Active') {
         obj.lineMaterial.color = new THREE.Color();
@@ -626,7 +617,7 @@ function visualizeTrackedObjects(objTracker) {
  */
 var cameraAngleY = 0;  // - PI..PI
 var cameraAngleX = 0;  // - PI..PI
-var cameraDistance = cameraZMax;
+var cameraDistance = cameraZInit;
 document.onmousewheel = function (event) {
   cameraDistance += event.wheelDeltaY * cameraZMax/2000;
   if (cameraDistance < 0) { cameraDistance = 0; }
