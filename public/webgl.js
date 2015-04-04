@@ -424,13 +424,21 @@ function animate(chunk) {
 
   // ------------------------------- END OF VERTEX GROUP DETECTION -----------------------------------
 
+  // TODO: add here pass, which could try to estimate all the time how many objects there are in
+  //       screen, so that information could be used to help actual object tracking algorithm
+  //       to perform a lot better
+
   objTracker.addFrame(sortedGroups);
 
   if (document.getElementById('showBlobsCheckbox').checked) {
     visualizeVertexGroups(sortedGroups);
+  } else {
+    clearVertexGroups(sortedGroups);
   }
   if (document.getElementById('showObjsCheckbox').checked) {
     visualizeTrackedObjects(objTracker);
+  } else {
+    clearTrackedObjects(objTracker);
   }
 
   render();
@@ -473,12 +481,15 @@ var maxMovementMaterial = new THREE.LineBasicMaterial( {
   transparent: true
 } );
 
-vertexGroupObjects = [];
-function visualizeVertexGroups(groups) {
-  // delete old ones
+var vertexGroupObjects = [];
+function clearVertexGroups() {
   for (wgObjIndex in vertexGroupObjects) {
     scene.remove(vertexGroupObjects[wgObjIndex]);
   }
+}
+
+function visualizeVertexGroups(groups) {
+  clearVertexGroups();
   vertexGroupObjects = [];
 
   // create new for every group in plane
@@ -541,6 +552,13 @@ function visualizeVertexGroups(groups) {
 }
 
 var trackedObjectsGraphics = {};
+function clearTrackedObjects() {
+  _.each(trackedObjectsGraphics, function (obj) {
+    if (obj) { scene.remove(obj.line); }
+  });
+  trackedObjectsGraphics = {};
+}
+
 function visualizeTrackedObjects(objTracker) {
   _.each(objTracker.trackedObjs, function (item) {
     var obj = trackedObjectsGraphics[item.id];
@@ -597,7 +615,7 @@ function visualizeTrackedObjects(objTracker) {
       // TODO: update obj speed direction etc.
     }
     obj.lives = true;
-});
+  });
 
   _.each(trackedObjectsGraphics, function (objToDraw, key) {
     if (objToDraw !== null) {
