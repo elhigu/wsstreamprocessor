@@ -441,6 +441,9 @@ function animate(chunk) {
     clearTrackedObjects(objTracker);
   }
 
+  document.getElementById('blob_count').textContent = ""+sortedGroups.length;
+  document.getElementById('obj_count').textContent = ""+objTracker.trackedObjs.length;
+
   render();
 
   //
