@@ -99,9 +99,7 @@ function animate(chunk) {
    * Group vertices by direction / nearbystuff
    */
   var vertexBuckets = { };
-  var totalGroups = 0;
   function createNewGroup(vertexObj) {
-    totalGroups++;
     var newGroup = [vertexObj];
     newGroup.$minX = vertexObj.x;
     newGroup.$minY = vertexObj.y;
