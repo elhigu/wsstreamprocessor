@@ -14,8 +14,24 @@ statsMs.setMode(1);
 var cameraZMax = 1000;
 var cameraZInit = 500;
 var SCALE_DEPTH = 0.3;
-var objTracker = new ObjTracker();
 
+var objTracker = new ObjTracker();
+var blobFinder = new BlobFinder();
+var circleMath = {
+  /**
+   * Returns sector width of two directions.
+   * @param dir1 Direction 1 [0 .. 1]
+   * @param dir2 Direction 2 [0 .. 1]
+   * @returns {Number} Different of directions [0 .. 0.5]
+   */
+  sectorWidth : function (dir1, dir2) {
+    if (dir1 < dir2) {
+      return (dir2-dir1);
+    } else {
+      return (dir2 + 1 - dir1);
+    }
+  }
+};
 
 init();
 
@@ -78,7 +94,6 @@ var vertexPool = [];
 var vertexGroupPool = [];
 
 
-// TODO: refactor to Group class....
 function generalDirectionOfGroup(group) {
   // average should be calculated actually calculated from every vertex, instead of min / max...
   var generalDirection = group.$minDirection +
@@ -91,7 +106,7 @@ function generalSpeedOfGroup(group) {
   var generalSpeed = group.$minSpeed +
     Math.abs(group.$maxSpeed - group.$minSpeed)/2;
   return generalSpeed;
-};
+}
 
 function animate(chunk) {
 
@@ -119,14 +134,6 @@ function animate(chunk) {
       y > group.$minY-4 &&
       y < group.$maxY+4
     );
-  }
-
-  function sectorWidth(start, end) {
-    if (start < end) {
-      return (end-start);
-    } else {
-      return (end + 1 - start);
-    }
   }
 
   // if start,end sectors overlap...
@@ -171,8 +178,8 @@ function animate(chunk) {
     if (direction > min && direction < max) {
       return "NONE";
     }
-    if (sectorWidth(direction, group.$maxDirection) <
-        sectorWidth(group.$minDirection, direction)) {
+    if (circleMath.sectorWidth(direction, group.$maxDirection) <
+      circleMath.sectorWidth(group.$minDirection, direction)) {
       return "MIN";
     } else {
       return "MAX";
@@ -218,14 +225,6 @@ function animate(chunk) {
 
   /**
    * Adds vertex to correct 2d group in certain position of z-plane.
-   *
-   * @todo Use data from dx, dy, hue and lightness to do grouping planes smarter
-   *       one could e.g. to group first at some too fine grained level
-   *       and in the end check if certain levels are near enough be and merge
-   *       those levels together (this would be kind of analogous of adding
-   *       1 or 2 dimensions more to current 2D grouping)
-   *       @see comment after merging groups in plane
-   *
    */
   function addVertexTo2dGroup(zBucket, vertexObj) {
     var planeBucket = vertexBuckets[zBucket];
@@ -262,6 +261,7 @@ function animate(chunk) {
   //
 
   statsMs.begin();
+  blobFinder.reset();
   var data = new DataStream(chunk.data, 0, DataStream.LITTLE_ENDIAN);
   var color = new THREE.Color();
   var movingVerticesCount = 0;
@@ -285,7 +285,8 @@ function animate(chunk) {
       vertexObj.speed = lightness;
       movingVerticesCount++;
       z = (hue*10*5 + lightness*10)*0.5*SCALE_DEPTH;
-      roundZ = (Math.round(hue*16)*10) + Math.round(lightness*10);
+      var roundZ = (Math.round(hue*16)*10) + Math.round(lightness*10);
+      blobFinder.addVertex(roundZ, vertexObj);
       addVertexTo2dGroup(roundZ, vertexObj);
     }
 
