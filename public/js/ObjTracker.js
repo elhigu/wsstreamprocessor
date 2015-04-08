@@ -119,11 +119,11 @@ function TrackedObj(group, options) {
   this.inactiveFrames = 0;
   this.activeFrames = 0;
   this.state = TrackedObj.State.Fresh;
-  this.direction = generalDirectionOfGroup(group);
-  this.speed = generalSpeedOfGroup(group);
+  this.direction = group.generalDirection();
+  this.speed = group.generalSpeed();
   this.minPosition = { x : group.$minX, y : group.$minY };
   this.maxPosition = { x : group.$maxX, y : group.$maxY };
-  this.size = group.length;
+  this.size = group.vertices.length;
 }
 
 TrackedObj.State = {
@@ -158,9 +158,15 @@ TrackedObj.prototype.updateState = function (matchedGroups) {
     this.minPosition.y = (_(matchedGroups).pluck('$minY').min() + this.minPosition.y)/2;
     this.maxPosition.x = (_(matchedGroups).pluck('$maxX').max() + this.maxPosition.x)/2;
     this.maxPosition.y = (_(matchedGroups).pluck('$maxY').max() + this.maxPosition.y)/2;
-    this.size = _(matchedGroups).pluck('length').sum();
-    this.direction = _(matchedGroups).map(generalDirectionOfGroup).sum() / matchedGroups.length;
-    this.speed = _(matchedGroups).map(generalSpeedOfGroup).sum() / matchedGroups.length;
+    this.size = _(matchedGroups).pluck('vertices').pluck('length').sum();
+    this.direction = _(matchedGroups)
+      .map(function (blob) {
+        return blob.generalDirection();
+      }).sum() / matchedGroups.length;
+    this.speed = _(matchedGroups)
+      .map(function (blob) {
+        return blob.generalSpeed();
+      }).sum() / matchedGroups.length;
   }
 
   // rough decision if tracked object should be dropped / state should be changed
@@ -253,17 +259,17 @@ TrackedObj.prototype.isSpeedMatch = function (group) {
 
 TrackedObj.prototype.directionDifference = function (group) {
   var dir1 = this.direction;
-  var dir2 = generalDirectionOfGroup(group);
+  var dir2 = group.generalDirection();
   var maybeThis = Math.abs(dir1-dir2);
   return maybeThis <= 0.5 ? maybeThis : (1-maybeThis);
 };
 
 TrackedObj.prototype.speedDifference = function (group) {
-  return Math.abs(generalSpeedOfGroup(group) - this.speed)/80;
+  return Math.abs(group.generalSpeed() - this.speed)/80;
 };
 
 TrackedObj.prototype.sizeDifference = function (group) {
-  return Math.abs(group.length - this.size)/40;
+  return Math.abs(group.vertices.length - this.size)/40;
 };
 
 // TODO: Track out group size and position and recognize if object actually left screen

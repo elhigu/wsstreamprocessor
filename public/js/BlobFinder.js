@@ -5,13 +5,8 @@
 
 function BlobFinder(options) {
   this.vertexBuckets = {};
+  this.foundBlobs = [];
 }
-
-/** not needed new Blob() should do unless pooling is implemented.
-BlobFinder.prototype.createNewBlob = function (vertexObj) {
-  return new Blob(vertexObj);
-};
-*/
 
 /**
  * Adds one vertex to blob finder.
@@ -61,9 +56,102 @@ BlobFinder.prototype.addVertex = function (sortingBucket, vertexObj) {
 
 BlobFinder.prototype.reset = function () {
   this.vertexBuckets = {};
+  this.foundBlobs = [];
 };
 
+/**
+ * Find groups from added vertices
+ */
 BlobFinder.prototype.findBlobs = function () {
+
+  /// Merge groups together if they are near enough to each other in xy-plane
+  function merge2dGroup(group1, group2) {
+    if (
+      group2.isPositionInside(group1.$minX, group1.$minY) ||
+      group2.isPositionInside(group1.$maxX, group1.$minY) ||
+      group2.isPositionInside(group1.$minX, group1.$maxY) ||
+      group2.isPositionInside(group1.$maxX, group1.$maxY)
+    ) {
+      group1.merge(group2);
+      return group1;
+    }
+    return null;
+  }
+
+  /// 4d merge check also that that direction / speed is fine before merging
+  function merge4dGroup(group1, group2) {
+    if (group1.isDirectionInside(group2) && group1.isSpeedInside(group2)) {
+      return merge2dGroup(group1, group2);
+    }
+    return null;
+  }
+
+  var filteredVertexBuckets = {};
+  var sortedGroups = [];
+  for (var plane in this.vertexBuckets) {
+    var oldGroupPlane = this.vertexBuckets[plane];
+
+    // filter out groups of less than 2 vertices
+    var newGroupPlane = oldGroupPlane.concat(oldGroupPlane.$finishedGroups);
+    for (var groupIndex = 0; groupIndex < newGroupPlane.length; groupIndex++) {
+      if (newGroupPlane[groupIndex].vertices.length < 2) {
+        newGroupPlane.splice(groupIndex,1);
+        groupIndex--;
+      }
+    }
+
+    //
+    // Brute force merge of nearby groups to bigger ones in the same plane
+    //
+    for (var i1 = 0; i1 < newGroupPlane.length-1; i1++) {
+      var group1 = newGroupPlane[i1];
+      for (var i2 = i1+1; i2 < newGroupPlane.length; i2++) {
+        var group2 = newGroupPlane[i2];
+        // if all future groups are too far away give up already
+        if (group1.$maxY < group2.$minY-4) { break; }
+
+        // if any of group corners is inside the other + threshold
+        var newGroup = merge2dGroup(group1, group2);
+        if (newGroup !== null) {
+          newGroupPlane[i1] = newGroup;
+          newGroupPlane.splice(i2,1);
+          // remove merged group and run merge for new group instead of continuing to next one
+          i1--;
+          break;
+        }
+      }
+    }
+
+    if (newGroupPlane.length > 0) {
+      filteredVertexBuckets[plane] = newGroupPlane;
+      for (var group in newGroupPlane) {
+        sortedGroups.push(newGroupPlane[group]);
+      }
+    }
+  }
+  this.vertexBuckets = filteredVertexBuckets;
+
+  // O(n^2) merge for all groups, this could be made faster if previous phase would sort all groups
+  // in xy-plane to know more or less, which groups even may overlap
+  for (var g1 = 0; g1 < sortedGroups.length-1; g1++) {
+    for (var g2 = g1 + 1; g2 < sortedGroups.length; g2++) {
+      var group1 = sortedGroups[g1];
+      var group2 = sortedGroups[g2];
+      var newGroup = merge4dGroup(group1, group2);
+      if (newGroup !== null) {
+        sortedGroups[g1] = newGroup;
+        // merge was done, remove merged group2 and run merge for index g1 again
+        sortedGroups.splice(g2,1);
+        g1--;
+        break;
+      }
+    }
+  }
+
+  // TODO: maybe precalculate average direction and speed...
+
+  this.vertexBuckets = {};
+  return sortedGroups;
 };
 
 
@@ -125,6 +213,18 @@ Blob.prototype.addVertex = function (vertexObj) {
   return 0;
 };
 
+Blob.prototype.merge = function (other) {
+  this.vertices = this.vertices.concat(other.vertices);
+  this.$minX = Math.min(this.$minX, other.$minX);
+  this.$maxX = Math.max(this.$maxX, other.$maxX);
+  this.$minY = Math.min(this.$minY, other.$minY);
+  this.$maxY = Math.max(this.$maxY, other.$maxY);
+  this.$minSpeed = Math.min(this.$minSpeed, other.$minSpeed);
+  this.$maxSpeed = Math.max(this.$maxSpeed, other.$maxSpeed);
+  this.updateDirection(other.$minDirection);
+  this.updateDirection(other.$maxDirection);
+};
+
 Blob.prototype.isPositionInside = function (x,y) {
   var th = this.options.positionThreshold;
   return (x > this.$minX-th && x < this.$maxX+th && y > this.$minY-th && y < this.$maxY+th);
@@ -170,22 +270,22 @@ Blob.prototype.generalSpeed = function () {
   return generalSpeed;
 };
 
-Blob.prototype.updateDirection = function (vertexObj) {
+Blob.prototype.updateDirection = function (direction) {
   var min = this.$minDirection;
   var max = this.$maxDirection;
   // sector overflows 0 point
   if (min > max) {
     max += 1;
   }
-  if (vertexObj.direction > min && vertexObj.direction < max) {
+  if (direction > min && direction < max) {
     return;
   }
-  var widthWithMax = circleMath.sectorWidth(vertexObj.direction, this.$maxDirection);
-  var widthWithMin = circleMath.sectorWidth(this.$minDirection, vertexObj.direction);
+  var widthWithMax = circleMath.sectorWidth(direction, this.$maxDirection);
+  var widthWithMin = circleMath.sectorWidth(this.$minDirection, direction);
   if (widthWithMax < widthWithMin) {
-    this.$minDirection = vertexObj.direction;
+    this.$minDirection = direction;
   } else {
-    this.$maxDirection = vertexObj.direction;
+    this.$maxDirection = direction;
   }
 };
 
