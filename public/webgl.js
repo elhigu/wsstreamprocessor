@@ -1,22 +1,7 @@
-var scene, camera, renderer;
-var geometry, material, mesh;
 
-var width = Math.floor(1920 / 16) + 1;
-var height = Math.floor(1080 / 16) + 1;
-var pixels = width * height;
-var vertices = new Float32Array(pixels * 3);
-var colors = new Float32Array(pixels * 3);
-var vertexObjs = [];
-var statsFps = new Stats();
-var statsMs = new Stats();
-statsMs.setMode(1);
-
-var cameraZMax = 1000;
-var cameraZInit = 500;
-var SCALE_DEPTH = 0.3;
-
-var objTracker = new ObjTracker();
+var frameReader = new MotionVectorReader();
 var blobFinder = new BlobFinder();
+var objTracker = new ObjTracker();
 var circleMath = {
   /**
    * Returns sector width of two directions.
@@ -33,31 +18,34 @@ var circleMath = {
   }
 };
 
+var scene, camera, renderer;
+var geometry, material, mesh;
+var vertices = new Float32Array(frameReader.frameVectorCount * 3);
+var colors = new Float32Array(frameReader.frameVectorCount * 3);
+var statsFps = new Stats();
+var statsMs = new Stats();
+statsMs.setMode(1);
+
+var cameraZMax = 1000;
+var cameraZInit = 500;
+var SCALE_DEPTH = 0.3;
+
+
 init();
 
 function init() {
-
   scene = new THREE.Scene();
-
   camera = new THREE.PerspectiveCamera(10, 1920 / 1080, 5, cameraZMax*2);
   camera.position.z = cameraZInit;
-
   geometry = new THREE.BufferGeometry();
 
-  for (var y = 0; y < height; y++) {
-    for (var x = 0; x < width; x++) {
-      var offset = (y * width + x) * 3;
-      vertices[offset + 0] = x - width / 2;
-      vertices[offset + 1] = (height - y) - height / 2;
-      vertices[offset + 2] = 0;
-      vertexObjs.push({
-        x: vertices[offset + 0],
-        y: vertices[offset + 1],
-        dx: 0,
-        dy: 0,
-        direction: 0, speed: 0
-      });
-    }
+  // init x,y,z for motion vector visualization
+  for (var i = 0; i < frameReader.frameVectorCount; i++) {
+    var offset = i * 3;
+    var vertexObj = frameReader.vertexObjs[i];
+    vertices[offset + 0] = vertexObj.x;
+    vertices[offset + 1] = vertexObj.y;
+    vertices[offset + 2] = 0;
   }
 
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
@@ -89,40 +77,42 @@ function init() {
 }
 
 function animate(chunk) {
-
-  //
-  // Read frame data, calculate direction and group vertices to kind of blobs
-  //
-
   statsMs.begin();
+
+  //
+  // Do the algorithm...
+  //
+  frameReader.readFrame(chunk);
   blobFinder.reset();
-  var data = new DataStream(chunk.data, 0, DataStream.LITTLE_ENDIAN);
-  var color = new THREE.Color();
-  var movingVerticesCount = 0;
-  for (var i = 0; i < pixels * 3; i += 3) {
-    var vertexObj = vertexObjs[i/3];
-    var dx = data.readInt8();
-    var dy = data.readInt8();
-    var sad = data.readInt16();
-
-    var hue = 0;
-    var lightness = 0;
-    var z = 0;
-    vertexObj.dx = dx;
-    vertexObj.dy = dy;
-
-    if (dx || dy) {
-      hue = (Math.atan2(dy, -dx) / Math.PI + 1) / 2;
-      lightness = Math.sqrt(dx * dx + dy * dy) / 128;
-      vertexObj.direction = hue;
-      vertexObj.speed = lightness;
-      movingVerticesCount++;
-      z = (hue*10*5 + lightness*10)*0.5*SCALE_DEPTH;
-      var roundZ = (Math.round(hue*16)*10) + Math.round(lightness*10);
+  _.each(frameReader.vertexObjs, function (vertexObj) {
+    var roundZ = (Math.round(vertexObj.direction*16)*10) + Math.round(vertexObj.speed*10);
+    if (vertexObj.speed > 0) {
       blobFinder.addVertex(roundZ, vertexObj);
     }
+  });
+  var blobs = blobFinder.findBlobs(frameReader.vertexObjs);
 
-    color.setHSL(hue, 1, lightness + 0.05);
+  // TODO: add here pass, which could try to estimate all the time how many objects there are in
+  //       screen, so that information could be used to help actual object tracking algorithm
+  //       to perform a lot better
+
+  objTracker.addFrame(blobs);
+
+  //
+  // Update visualizations...
+  //
+
+  // update motion vector colors / positions
+  var color = new THREE.Color();
+  for (var i = 0; i < frameReader.frameVectorCount*3; i+=3) {
+    var vertexObj = frameReader.vertexObjs[i/3];
+    var z = 0;
+    if (vertexObj.speed > 0) {
+      z = (vertexObj.direction*10*5 + vertexObj.speed*10)*0.5*SCALE_DEPTH;
+      color.setHSL(vertexObj.direction, 1, vertexObj.speed + 0.05);
+    } else {
+      color.setRGB(0.01, 0.03, 0.02);
+    }
     colors[i + 0] = color.r;
     colors[i + 1] = color.g;
     colors[i + 2] = color.b;
@@ -130,14 +120,6 @@ function animate(chunk) {
   }
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
-
-  var blobs = blobFinder.findBlobs();
-
-  // TODO: add here pass, which could try to estimate all the time how many objects there are in
-  //       screen, so that information could be used to help actual object tracking algorithm
-  //       to perform a lot better
-
-  objTracker.addFrame(blobs);
 
   if (document.getElementById('showBlobsCheckbox').checked) {
     visualizeVertexGroups(blobs);
@@ -340,7 +322,7 @@ function visualizeTrackedObjects(objTracker) {
 /**
  * Mouse controls
  *
- * TODO: capture pinchzoom...
+ * TODO: fix dragging to move camera in plane, separate button for rotate
  */
 var cameraAngleY = 0;  // - PI..PI
 var cameraAngleX = 0;  // - PI..PI
