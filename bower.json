@@ -29,6 +29,7 @@
   "dependencies": {
     "stats.js": "*",
     "threejs-examples": "*",
-    "lodash": "~3.5.0"
+    "lodash": "~3.5.0",
+    "bacon": "~0.7.53"
   }
 }

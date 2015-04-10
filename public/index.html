@@ -4,8 +4,17 @@
     <title>RaspiCam motion vector processor</title>
     <script type="text/javascript" src="three.min.js"></script>
     <script type="text/javascript" src="lib/stats.js/build/stats.min.js"></script>
+    <script type="text/javascript" src="lib/bacon/lib/jquery.js"></script>
+    <script type="text/javascript" src="lib/bacon/dist/Bacon.min.js"></script>
+    <script type="text/javascript" src="lib/lodash/lodash.min.js"></script>
 
     <script type="text/javascript" src="DataStream.js"></script>
+    <script type="text/javascript" src="js/MotionVectorReader.js"></script>
+    <script type="text/javascript" src="js/BlobFinder.js"></script>
+    <script type="text/javascript" src="js/ObjTracker.js"></script>
+
+    <script type="text/javascript" src="js/app.js"></script>
+
     <style>
       body {
         margin : 0px;
@@ -65,6 +74,10 @@
         zoom: 2;
         margin-top: -1px
       }
+      input[type=number] {
+        width: 50px;
+        float: right;
+      }
 
     </style>
   </head>
@@ -76,13 +89,25 @@
           <span class="info-label">Show blobs</span>:
           <input type="checkbox" id="showBlobsCheckbox">
         </div>
-        <div class="row bigone">
-          <span class="info-label">Show objs</span>:
-          <input type="checkbox" id="showObjsCheckbox" checked>
+        <div class="row">
+          <span class="info-label">Position threshold</span>:
+          <input type="number" id="positionTh">
+        </div>
+        <div class="row">
+          <span class="info-label">Speed threshold</span>:
+          <input type="number" id="speedTh">
+        </div>
+        <div class="row">
+          <span class="info-label">Direction threshold</span>:
+          <input type="number" id="directionTh">
         </div>
         <div class="row">
           <span class="info-label">Blob count</span>:
           <span id="blob_count"></span>
+        </div>
+        <div class="row bigone">
+          <span class="info-label">Show objs</span>:
+          <input type="checkbox" id="showObjsCheckbox" checked>
         </div>
         <div class="row">
           <span class="info-label">TrackedObj count</span>:
@@ -90,11 +115,8 @@
         </div>
       </div>
     </div>
+
     <script src="/socket.io/socket.io.js"></script>
-    <script type="text/javascript" src="lib/lodash/lodash.min.js"></script>
-    <script type="text/javascript" src="js/MotionVectorReader.js"></script>
-    <script type="text/javascript" src="js/BlobFinder.js"></script>
-    <script type="text/javascript" src="js/ObjTracker.js"></script>
     <script type="text/javascript" src="webgl.js"></script>
     <script>
       var socket = io({
