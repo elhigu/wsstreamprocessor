@@ -31,9 +31,8 @@ var cameraZInit = 500;
 var SCALE_DEPTH = 0.3;
 
 
-init();
 
-function init() {
+function webgl_init() {
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(10, 1920 / 1080, 5, cameraZMax*2);
   camera.position.z = cameraZInit;

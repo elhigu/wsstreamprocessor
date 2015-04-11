@@ -13,6 +13,8 @@
     <script type="text/javascript" src="js/BlobFinder.js"></script>
     <script type="text/javascript" src="js/ObjTracker.js"></script>
 
+    <script src="/socket.io/socket.io.js"></script>
+    <script type="text/javascript" src="webgl.js"></script>
     <script type="text/javascript" src="js/app.js"></script>
 
     <style>
@@ -115,36 +117,5 @@
         </div>
       </div>
     </div>
-
-    <script src="/socket.io/socket.io.js"></script>
-    <script type="text/javascript" src="webgl.js"></script>
-    <script>
-      var socket = io({
-        transports: ['websocket']
-      });
-      var frameQueue = [];
-      socket.on('newFrame', function(msg) {
-        frameQueue.unshift(msg);
-      });
-      socket.on('setFps', function(msg) {
-        restartFrameConsumer(msg)
-      });
-
-      var interval = null;
-      function restartFrameConsumer(fps) {
-        if (interval) {
-          clearInterval(interval);
-        }
-        // play frames from buffer a bit faster than given fps
-        interval = setInterval(function () {
-          if (frameQueue.length > 0) {
-            animate(frameQueue.pop());
-          }
-        }, Math.floor(900/fps));
-      }
-
-      // start with 25 fps by default
-      restartFrameConsumer(25);
-    </script>
   </body>
 </html>
