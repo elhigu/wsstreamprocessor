@@ -1,39 +1,53 @@
+var frameReader = new MotionVectorReader();
+var blobFinder = new BlobFinder();
+var objTracker = new ObjTracker();
+var circleMath = {
+  /**
+   * Returns sector width of two directions.
+   * @param dir1 Direction 1 [0 .. 1]
+   * @param dir2 Direction 2 [0 .. 1]
+   * @returns {Number} Different of directions [0 .. 0.5]
+   */
+  sectorWidth : function (dir1, dir2) {
+    if (dir1 < dir2) {
+      return (dir2-dir1);
+    } else {
+      return (dir2 + 1 - dir1);
+    }
+  }
+};
+
 $(function() {
   webgl_init();
-
-  var blobFinderParams = {
-    positionThreshold : 4,
-    speedThreshold : 0.2,
-    directionThreshold : 0.1
-  };
 
   function eventTargetVal(event) {
     return $(event.target).val();
   }
 
   function numberFieldAsStream(jqEl) {
-    var changeStream = jqEl.asEventStream('change').map(eventTargetVal);
-    var keyupStream = jqEl.asEventStream('keyup').map(eventTargetVal);
-    return keyupStream.merge(changeStream).skipDuplicates();
+    var changeStream = jqEl.asEventStream('change').flatMap(eventTargetVal);
+    var keyupStream = jqEl.asEventStream('keyup').flatMap(eventTargetVal);
+    return keyupStream.merge(changeStream).skipDuplicates().toProperty(jqEl.val());
   }
 
+  var blobFinderDefaults = {
+    positionThreshold : 4,
+    speedThreshold : 0.2,
+    directionThreshold : 0.1
+  };
+
   var positionInputEl = $('input#positionTh');
-  positionInputEl.val(blobFinderParams.positionThreshold);
-  numberFieldAsStream(positionInputEl).onValue(function (value) {
-    blobFinderParams.positionThreshold = value;
-  });
-
+  positionInputEl.val(blobFinderDefaults.positionThreshold);
   var speedInputEl = $('input#speedTh');
-  speedInputEl.val(blobFinderParams.speedThreshold);
-  numberFieldAsStream(speedInputEl).log().onValue(function (value) {
-    blobFinderParams.speedThreshold = value;
-  });
-
+  speedInputEl.val(blobFinderDefaults.speedThreshold);
   var directionThInputEl = $('input#directionTh');
-  directionThInputEl.val(blobFinderParams.directionThreshold);
-  numberFieldAsStream(directionThInputEl).log().onValue(function (value) {
-    blobFinderParams.directionThreshold = value;
-  });
+  directionThInputEl.val(blobFinderDefaults.directionThreshold);
+
+  var blobFinderParams = Bacon.combineTemplate({
+    positionThreshold: numberFieldAsStream(positionInputEl),
+    speedThreshold: numberFieldAsStream(speedInputEl),
+    directionThreshold: numberFieldAsStream(directionThInputEl)
+  }).log();
 
   // Read socket.io socket
   var socket = io({
@@ -44,20 +58,42 @@ $(function() {
   });
   var fpsSelectionStream = Bacon.fromBinder(function (sink) {
     socket.on('setFps', sink);
-  }).toProperty(25);
+  }).toProperty(25).log();
 
   var throttledFrameStream = Bacon
     .combineTemplate({
-      frame: frameStream,
+      rawFrame: frameStream,
       fps: fpsSelectionStream
     })
     .flatMapConcat(function (fullFrame) {
       // only 950ms to catch up a bit rather than falling e.g. 1ms behind all the time...
-      return Bacon.once(fullFrame.frame).concat(Bacon.later(950/fullFrame.fps).filter(false));
+      return Bacon.once(fullFrame.rawFrame).concat(Bacon.later(950/fullFrame.fps).filter(false));
+    })
+    .map(function (rawFrame) {
+      statsMs.begin();
+      return frameReader.readFrame(rawFrame);
     });
 
-  throttledFrameStream.onValue(function (frame) {
-    animate(frame);
-  });
+  Bacon
+    .combineTemplate({
+      frame: throttledFrameStream,
+      blobFinderParams: blobFinderParams
+    })
+    .flatMap(function (blobFinderInput) {
+      blobFinder.reset();
+      _.each(blobFinderInput.frame, function (motionVector) {
+        var roundZ = (Math.round(motionVector.direction*16)*10) + Math.round(motionVector.speed*10);
+        if (motionVector.speed > 0) {
+          blobFinder.addVertex(roundZ, motionVector);
+        }
+      });
+      return blobFinder.findBlobs(blobFinderInput.frame);
+    }).onValue(function (blobs) {
+      animate(blobs);
+      statsMs.end();
+      statsFps.update();
+    });
+
+  // TODO: request animation frame for actually drawing visualizations
 
 });

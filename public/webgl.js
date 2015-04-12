@@ -1,30 +1,10 @@
 
-var frameReader = new MotionVectorReader();
-var blobFinder = new BlobFinder();
-var objTracker = new ObjTracker();
-var circleMath = {
-  /**
-   * Returns sector width of two directions.
-   * @param dir1 Direction 1 [0 .. 1]
-   * @param dir2 Direction 2 [0 .. 1]
-   * @returns {Number} Different of directions [0 .. 0.5]
-   */
-  sectorWidth : function (dir1, dir2) {
-    if (dir1 < dir2) {
-      return (dir2-dir1);
-    } else {
-      return (dir2 + 1 - dir1);
-    }
-  }
-};
-
 var scene, camera, renderer;
 var geometry, material, mesh;
-var vertices = new Float32Array(frameReader.frameVectorCount * 3);
-var colors = new Float32Array(frameReader.frameVectorCount * 3);
-var statsFps = new Stats();
-var statsMs = new Stats();
-statsMs.setMode(1);
+var vertices;
+var colors;
+var statsFps;
+var statsMs;
 
 var cameraZMax = 1000;
 var cameraZInit = 500;
@@ -33,6 +13,12 @@ var SCALE_DEPTH = 0.3;
 
 
 function webgl_init() {
+  vertices = new Float32Array(frameReader.frameVectorCount * 3);
+  colors = new Float32Array(frameReader.frameVectorCount * 3);
+  statsFps = new Stats();
+  statsMs = new Stats();
+  statsMs.setMode(1);
+
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(10, 1920 / 1080, 5, cameraZMax*2);
   camera.position.z = cameraZInit;
@@ -71,25 +57,12 @@ function webgl_init() {
   statsMs.domElement.style.top = '0px';
   document.body.appendChild(statsMs.domElement);
   statsFps.domElement.style.position = 'absolute';
-  statsFps.domElement.style.top = '30px';
+  statsFps.domElement.style.top = '0px';
+  statsFps.domElement.style.left = '80px';
   document.body.appendChild(statsFps.domElement);
 }
 
-function animate(chunk) {
-  statsMs.begin();
-
-  //
-  // Do the algorithm...
-  //
-  frameReader.readFrame(chunk);
-  blobFinder.reset();
-  _.each(frameReader.vertexObjs, function (vertexObj) {
-    var roundZ = (Math.round(vertexObj.direction*16)*10) + Math.round(vertexObj.speed*10);
-    if (vertexObj.speed > 0) {
-      blobFinder.addVertex(roundZ, vertexObj);
-    }
-  });
-  var blobs = blobFinder.findBlobs(frameReader.vertexObjs);
+function animate(blobs) {
 
   // TODO: add here pass, which could try to estimate all the time how many objects there are in
   //       screen, so that information could be used to help actual object tracking algorithm
@@ -136,8 +109,6 @@ function animate(chunk) {
 
   render();
 
-  statsMs.end();
-  statsFps.update();
 }
 
 //

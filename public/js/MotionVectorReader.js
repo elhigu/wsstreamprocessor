@@ -47,4 +47,5 @@ MotionVectorReader.prototype.readFrame = function (chunk) {
       vertexObj.speed = 0;
     }
   }
+  return this.vertexObjs;
 };
