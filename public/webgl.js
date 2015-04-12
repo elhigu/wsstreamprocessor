@@ -55,25 +55,17 @@ function webgl_init() {
   // stats
   statsMs.domElement.style.position = 'absolute';
   statsMs.domElement.style.top = '0px';
+  statsMs.domElement.style.left = '0px';
+  statsMs.domElement.style.width = '120px';
   document.body.appendChild(statsMs.domElement);
   statsFps.domElement.style.position = 'absolute';
   statsFps.domElement.style.top = '0px';
-  statsFps.domElement.style.left = '80px';
+  statsFps.domElement.style.left = '125px';
+  statsFps.domElement.style.width = '120px';
   document.body.appendChild(statsFps.domElement);
 }
 
-function animate(blobs) {
-
-  // TODO: add here pass, which could try to estimate all the time how many objects there are in
-  //       screen, so that information could be used to help actual object tracking algorithm
-  //       to perform a lot better
-
-  objTracker.addFrame(blobs);
-
-  //
-  // Update visualizations...
-  //
-
+function updateMotionVectorVisualization(frame) {
   // update motion vector colors / positions
   var color = new THREE.Color();
   for (var i = 0; i < frameReader.frameVectorCount*3; i+=3) {
@@ -92,23 +84,24 @@ function animate(blobs) {
   }
   geometry.addAttribute('color', new THREE.BufferAttribute(colors, 3));
   geometry.addAttribute('position', new THREE.BufferAttribute(vertices, 3));
+}
 
+function updateBlobVisualizations(blobs) {
   if (document.getElementById('showBlobsCheckbox').checked) {
     visualizeVertexGroups(blobs);
   } else {
     clearVertexGroups();
   }
+  document.getElementById('blob_count').textContent = ""+blobs.length;
+}
+
+function updateObjectTrackingVisualizations(objTracker) {
   if (document.getElementById('showObjsCheckbox').checked) {
     visualizeTrackedObjects(objTracker);
   } else {
     clearTrackedObjects(objTracker);
   }
-
-  document.getElementById('blob_count').textContent = ""+blobs.length;
   document.getElementById('obj_count').textContent = ""+objTracker.trackedObjs.length;
-
-  render();
-
 }
 
 //

@@ -44,12 +44,15 @@ $(function() {
   directionThInputEl.val(blobFinderDefaults.directionThreshold);
 
   var blobFinderParams = Bacon.combineTemplate({
+    visualizationEnabled: $('#showBlobsCheckbox').asEventStream('change').flatMap(eventTargetVal),
     positionThreshold: numberFieldAsStream(positionInputEl),
     speedThreshold: numberFieldAsStream(speedInputEl),
     directionThreshold: numberFieldAsStream(directionThInputEl)
   }).log();
 
-  // Read socket.io socket
+  /**
+   * Read socket.io events to streams
+   */
   var socket = io({
     transports: ['websocket']
   });
@@ -60,6 +63,10 @@ $(function() {
     socket.on('setFps', sink);
   }).toProperty(25).log();
 
+
+  /**
+   * Read raw frames and throttle + interpret them as motion vector objects.
+   */
   var throttledFrameStream = Bacon
     .combineTemplate({
       rawFrame: frameStream,
@@ -69,31 +76,80 @@ $(function() {
       // only 950ms to catch up a bit rather than falling e.g. 1ms behind all the time...
       return Bacon.once(fullFrame.rawFrame).concat(Bacon.later(950/fullFrame.fps).filter(false));
     })
-    .map(function (rawFrame) {
+    // flat map to prevent lazy evaluation
+    .flatMap(function (rawFrame) {
       statsMs.begin();
       return frameReader.readFrame(rawFrame);
     });
 
-  Bacon
+  /**
+   * Frame counter, updated on every throttled frame
+   */
+  var frameNumberStream = throttledFrameStream.map(1)
+    .scan(0, function plus(sum, newVal) { return sum + newVal });
+
+  /**
+   * This stream updates every time, when new frame or blob detector options are changed.
+   */
+  var blobStream = Bacon
     .combineTemplate({
       frame: throttledFrameStream,
       blobFinderParams: blobFinderParams
     })
-    .flatMap(function (blobFinderInput) {
+    .map(function (blobFinderInput) {
       blobFinder.reset();
       _.each(blobFinderInput.frame, function (motionVector) {
-        var roundZ = (Math.round(motionVector.direction*16)*10) + Math.round(motionVector.speed*10);
+        var roundZ = (Math.round(motionVector.direction * 16) * 10) + Math.round(motionVector.speed * 10);
         if (motionVector.speed > 0) {
           blobFinder.addVertex(roundZ, motionVector);
         }
       });
       return blobFinder.findBlobs(blobFinderInput.frame);
-    }).onValue(function (blobs) {
-      animate(blobs);
-      statsMs.end();
-      statsFps.update();
     });
 
+
+  /**
+   * Blob stream which updates, when ever there is new frame.
+   */
+  var newFrameBlobStream = Bacon
+    .combineTemplate({
+      blobs: blobStream,
+      frameNumber: frameNumberStream
+    })
+    .skipDuplicates(function (oldVal, newVal) {
+      return oldVal.frameNumber === newVal.frameNumber;
+    })
+    .map('.blobs');
+
+
+  var objTrackerUpdatedStream = newFrameBlobStream
+    // TODO: add here pass, which could try to estimate all the time how many objects there are in
+    //       screen, so that information could be used to help actual object tracking algorithm
+    //       to perform a lot better
+    .map(function (blobs) {
+      objTracker.addFrame(blobs);
+      return objTracker;
+    });
+
+  throttledFrameStream.onValue(function (frame) {
+    updateMotionVectorVisualization(frame);
+  });
+
   // TODO: request animation frame for actually drawing visualizations
+  blobStream.onValue(function (blobs) {
+    updateBlobVisualizations(blobs);
+  });
+
+  objTrackerUpdatedStream.onValue(function (objTracker) {
+    updateObjectTrackingVisualizations(objTracker);
+  });
+
+  var renderStream = Bacon.mergeAll(blobStream, objTrackerUpdatedStream, throttledFrameStream);
+
+  renderStream.onValue(function () {
+    render();
+    statsMs.end();
+    statsFps.update();
+  });
 
 });
