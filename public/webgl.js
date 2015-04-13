@@ -73,9 +73,10 @@ function updateMotionVectorVisualization(frame) {
     var z = 0;
     if (vertexObj.speed > 0) {
       z = (vertexObj.direction*10*5 + vertexObj.speed*10)*0.5*SCALE_DEPTH;
+      // this is actually pretty heavy operation... could be cached to LUT
       color.setHSL(vertexObj.direction, 1, vertexObj.speed + 0.05);
     } else {
-      color.setRGB(0.01, 0.03, 0.02);
+      color.setRGB(0.07, 0.07, 0.07);
     }
     colors[i + 0] = color.r;
     colors[i + 1] = color.g;

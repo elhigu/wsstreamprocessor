@@ -3,7 +3,7 @@
  * calculates direction, area and speed for every group.
  */
 
-function BlobFinder(options) {
+function BlobFinder() {
   this.vertexBuckets = {};
   this.foundBlobs = [];
 }
@@ -28,7 +28,7 @@ BlobFinder.prototype.addVertex = function (sortingBucket, vertexObj) {
   var planeBucket = this.vertexBuckets[sortingBucket];
   if (!planeBucket) {
     // create main bucket with initial vertex group
-    var planeBucket = [new Blob(vertexObj)];
+    var planeBucket = [new Blob(vertexObj, this.options)];
     planeBucket.$finishedGroups = [];
     this.vertexBuckets[sortingBucket] = planeBucket;
   } else {
@@ -49,12 +49,13 @@ BlobFinder.prototype.addVertex = function (sortingBucket, vertexObj) {
     }
     // couldn't find bucket where is near enough, create new bucket
     if (!groupFound) {
-      planeBucket.unshift(new Blob(vertexObj));
+      planeBucket.unshift(new Blob(vertexObj, this.options));
     }
   }
 };
 
-BlobFinder.prototype.reset = function () {
+BlobFinder.prototype.reset = function (options) {
+  this.options = options;
   this.vertexBuckets = {};
   this.foundBlobs = [];
 };

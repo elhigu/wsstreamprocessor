@@ -102,7 +102,7 @@ $(function() {
       blobFinderParams: blobFinderParams
     })
     .map(function (blobFinderInput) {
-      blobFinder.reset();
+      blobFinder.reset(blobFinderInput.blobFinderParams);
       _.each(blobFinderInput.frame, function (motionVector) {
         var roundZ = (Math.round(motionVector.direction * 16) * 10) + Math.round(motionVector.speed * 10);
         if (motionVector.speed > 0) {
