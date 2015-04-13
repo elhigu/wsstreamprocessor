@@ -24,6 +24,11 @@ $(function() {
     return $(event.target).val();
   }
 
+  function inputChangedAsStream(jqEl) {
+    var changeStream = jqEl.asEventStream('change').flatMap(eventTargetVal);
+    return changeStream.toProperty(jqEl.val());
+  }
+
   function numberFieldAsStream(jqEl) {
     var changeStream = jqEl.asEventStream('change').flatMap(eventTargetVal);
     var keyupStream = jqEl.asEventStream('keyup').flatMap(eventTargetVal);
@@ -44,7 +49,7 @@ $(function() {
   directionThInputEl.val(blobFinderDefaults.directionThreshold);
 
   var blobFinderParams = Bacon.combineTemplate({
-    visualizationEnabled: $('#showBlobsCheckbox').asEventStream('change').flatMap(eventTargetVal),
+    visualizationEnabled: inputChangedAsStream($('#showBlobsCheckbox')),
     positionThreshold: numberFieldAsStream(positionInputEl),
     speedThreshold: numberFieldAsStream(speedInputEl),
     directionThreshold: numberFieldAsStream(directionThInputEl)
@@ -77,16 +82,16 @@ $(function() {
       return Bacon.once(fullFrame.rawFrame).concat(Bacon.later(950/fullFrame.fps).filter(false));
     })
     // flat map to prevent lazy evaluation
-    .flatMap(function (rawFrame) {
-      statsMs.begin();
+    .map(function (rawFrame) {
+      statsMs.begin(); // from reading frame, until finishing objectTracker
       return frameReader.readFrame(rawFrame);
     });
 
   /**
    * Frame counter, updated on every throttled frame
    */
-  var frameNumberStream = throttledFrameStream.map(1)
-    .scan(0, function plus(sum, newVal) { return sum + newVal });
+  var frameNumberStream = throttledFrameStream.map(1).scan(0, plus);
+  function plus(sum, newVal) { return sum + newVal }
 
   /**
    * This stream updates every time, when new frame or blob detector options are changed.
@@ -122,34 +127,47 @@ $(function() {
     .map('.blobs');
 
 
+  /**
+   * Run object tracker, when ever we have blobs for a new frame data.
+   */
   var objTrackerUpdatedStream = newFrameBlobStream
     // TODO: add here pass, which could try to estimate all the time how many objects there are in
     //       screen, so that information could be used to help actual object tracking algorithm
     //       to perform a lot better
     .map(function (blobs) {
       objTracker.addFrame(blobs);
+      statsMs.end();
       return objTracker;
+    })
+    ;
+
+  /**
+   * Synchronize rendering on next window.requestAnimationFrame and if some visualized data has changed
+   */
+  var renderUpdateRequestCounter = Bacon
+    .mergeAll(throttledFrameStream, blobStream, objTrackerUpdatedStream)
+    .map(1).scan(0, plus);
+
+  // sample stream when ever repaint is going to be done...
+  // if stream counter is changed, something is dirty.
+  var updateRequiredStream = renderUpdateRequestCounter
+    .sampledBy(Bacon.scheduleAnimationFrame())
+    .skipDuplicates();
+
+  // when update really really needed and it is perfect time for animation frame,
+  // get latest data and visualize...
+  Bacon
+    .combineTemplate({
+      motionVectors: throttledFrameStream,
+      blobs: blobStream,
+      objTracker: objTrackerUpdatedStream
+    })
+    .sampledBy(updateRequiredStream)
+    .onValue(function (latestData) {
+      updateMotionVectorVisualization(latestData.motionVectors);
+      updateBlobVisualizations(latestData.blobs);
+      updateObjectTrackingVisualizations(latestData.objTracker);
+      render();
+      statsFps.update();
     });
-
-  throttledFrameStream.onValue(function (frame) {
-    updateMotionVectorVisualization(frame);
-  });
-
-  // TODO: request animation frame for actually drawing visualizations
-  blobStream.onValue(function (blobs) {
-    updateBlobVisualizations(blobs);
-  });
-
-  objTrackerUpdatedStream.onValue(function (objTracker) {
-    updateObjectTrackingVisualizations(objTracker);
-  });
-
-  var renderStream = Bacon.mergeAll(blobStream, objTrackerUpdatedStream, throttledFrameStream);
-
-  renderStream.onValue(function () {
-    render();
-    statsMs.end();
-    statsFps.update();
-  });
-
 });

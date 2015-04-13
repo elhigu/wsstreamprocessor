@@ -30,6 +30,7 @@
     "stats.js": "*",
     "threejs-examples": "*",
     "lodash": "~3.5.0",
-    "bacon": "~0.7.53"
+    "bacon": "~0.7.53",
+    "bacon.animationframe": "~0.2.1"
   }
 }
