@@ -1,0 +1,62 @@
+body {
+  margin : 0px;
+  background-color: rgb(20,20,20);
+}
+
+#canvasWrapper {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 280px;
+}
+
+#canvasWrapper canvas{
+  position: absolute;
+  width: 100%;
+  top: 0;
+  bottom: 0;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+#statsAndControls {
+  position: fixed;
+  right: 0;
+  width: 256px;
+  height: 100%;
+  z-index: 1000;
+  background-color: rgb(0, 0, 34);
+  border-left: 5px solid rgb(34,34,34);
+  border-bottom: 5px solid rgb(34,34,34);
+  border-bottom-left-radius: 8px;
+  padding: 10px;
+
+  color: rgb(0, 255, 255);
+  font-family: Helvetica, Arial, sans-serif;
+  font-size: 9px;
+  font-weight: bold;
+  line-height: 15px;
+  text-align: left;
+}
+
+.row {
+  position: relative;
+  width: 100%;
+  height: 35px;
+}
+
+.row.bigone {
+  padding-top: 5px;
+  padding-bottom: 5px;
+  font-size: 20px;
+}
+.row.bigone input {
+  float: right;
+  zoom: 2;
+  margin-top: -1px
+}
+input[type=number] {
+  width: 50px;
+  float: right;
+}

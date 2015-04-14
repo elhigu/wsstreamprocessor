@@ -20,40 +20,7 @@ var circleMath = {
 $(function() {
   webgl_init();
 
-  function eventTargetVal(event) {
-    return $(event.target).val();
-  }
-
-  function inputChangedAsStream(jqEl) {
-    var changeStream = jqEl.asEventStream('change').flatMap(eventTargetVal);
-    return changeStream.toProperty(jqEl.val());
-  }
-
-  function numberFieldAsStream(jqEl) {
-    var changeStream = jqEl.asEventStream('change').flatMap(eventTargetVal);
-    var keyupStream = jqEl.asEventStream('keyup').flatMap(eventTargetVal);
-    return keyupStream.merge(changeStream).skipDuplicates().toProperty(jqEl.val());
-  }
-
-  var blobFinderDefaults = {
-    positionThreshold : 4,
-    speedThreshold : 0.2,
-    directionThreshold : 0.1
-  };
-
-  var positionInputEl = $('input#positionTh');
-  positionInputEl.val(blobFinderDefaults.positionThreshold);
-  var speedInputEl = $('input#speedTh');
-  speedInputEl.val(blobFinderDefaults.speedThreshold);
-  var directionThInputEl = $('input#directionTh');
-  directionThInputEl.val(blobFinderDefaults.directionThreshold);
-
-  var blobFinderParams = Bacon.combineTemplate({
-    visualizationEnabled: inputChangedAsStream($('#showBlobsCheckbox')),
-    positionThreshold: numberFieldAsStream(positionInputEl),
-    speedThreshold: numberFieldAsStream(speedInputEl),
-    directionThreshold: numberFieldAsStream(directionThInputEl)
-  }).log();
+  var uiControls = new UiControls();
 
   /**
    * Read socket.io events to streams
@@ -99,7 +66,7 @@ $(function() {
   var blobStream = Bacon
     .combineTemplate({
       frame: throttledFrameStream,
-      blobFinderParams: blobFinderParams
+      blobFinderParams: uiControls.blobFinderParams
     })
     .map(function (blobFinderInput) {
       blobFinder.reset(blobFinderInput.blobFinderParams);
@@ -130,16 +97,20 @@ $(function() {
   /**
    * Run object tracker, when ever we have blobs for a new frame data.
    */
-  var objTrackerUpdatedStream = newFrameBlobStream
+  var objTrackerUpdatedStream =
+    Bacon.combineTemplate({
+      blobs: newFrameBlobStream,
+      objTrackerParams: uiControls.objTrackerParams
+    })
     // TODO: add here pass, which could try to estimate all the time how many objects there are in
     //       screen, so that information could be used to help actual object tracking algorithm
     //       to perform a lot better
-    .map(function (blobs) {
-      objTracker.addFrame(blobs);
+    .map(function (blobsAndOptions) {
+      objTracker.addFrame(blobsAndOptions.blobs);
+      // TODO: wrap timer implementation to prevent trying to end if not in started state...
       statsMs.end();
       return objTracker;
-    })
-    ;
+    });
 
   /**
    * Synchronize rendering on next window.requestAnimationFrame and if some visualized data has changed
