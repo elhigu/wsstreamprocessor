@@ -1,3 +1,6 @@
+var statsFps;
+var statsMs;
+
 /**
  * Ui controller.
  *
@@ -5,6 +8,26 @@
  * them as streams to rest of the system.
  */
 function UiControls(options) {
+  statsFps = new Stats();
+
+  // hackfix end() to do nothing unless begin has been called before
+  var _statsMs = new Stats();
+  _statsMs.setMode(1);
+  statsMs = {
+    domElement : _statsMs.domElement,
+    _statsMs : _statsMs,
+    _hasBegun : false,
+    begin : function () {
+      this._hasBegun = true;
+      this._statsMs.begin();
+    },
+    end : function () {
+      if (this._hasBegun) {
+        this._hasBegun = false;
+        this._statsMs.end();
+      }
+    }
+  };
 
   function eventTargetVal(event) {
     return $(event.target).val();

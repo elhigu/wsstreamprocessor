@@ -3,8 +3,6 @@ var scene, camera, renderer;
 var geometry, material, mesh;
 var vertices;
 var colors;
-var statsFps;
-var statsMs;
 
 var cameraZMax = 1000;
 var cameraZInit = 500;
@@ -15,9 +13,6 @@ var SCALE_DEPTH = 0.3;
 function webgl_init() {
   vertices = new Float32Array(frameReader.frameVectorCount * 3);
   colors = new Float32Array(frameReader.frameVectorCount * 3);
-  statsFps = new Stats();
-  statsMs = new Stats();
-  statsMs.setMode(1);
 
   scene = new THREE.Scene();
   camera = new THREE.PerspectiveCamera(10, 1920 / 1080, 5, cameraZMax*2);

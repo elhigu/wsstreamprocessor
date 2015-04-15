@@ -18,9 +18,10 @@ var circleMath = {
 };
 
 $(function() {
-  webgl_init();
 
   var uiControls = new UiControls();
+
+  webgl_init();
 
   /**
    * Read socket.io events to streams
@@ -107,7 +108,6 @@ $(function() {
     //       to perform a lot better
     .map(function (blobsAndOptions) {
       objTracker.addFrame(blobsAndOptions.blobs);
-      // TODO: wrap timer implementation to prevent trying to end if not in started state...
       statsMs.end();
       return objTracker;
     });
