@@ -115,9 +115,11 @@ $(function() {
   /**
    * Synchronize rendering on next window.requestAnimationFrame and if some visualized data has changed
    */
-  var renderUpdateRequestCounter = Bacon
-    .mergeAll(throttledFrameStream, blobStream, objTrackerUpdatedStream)
-    .map(1).scan(0, plus);
+
+  var renderUpdateRequestCounter = Bacon.mergeAll(
+    throttledFrameStream, blobStream, objTrackerUpdatedStream,
+    uiControls.cameraOrientationEvents.map(webgl_updateCamera)
+  ).map(1).scan(0, plus);
 
   // sample stream when ever repaint is going to be done...
   // if stream counter is changed, something is dirty.
@@ -141,4 +143,6 @@ $(function() {
       render();
       statsFps.update();
     });
+
+
 });

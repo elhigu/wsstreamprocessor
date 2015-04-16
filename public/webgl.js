@@ -278,66 +278,22 @@ function visualizeTrackedObjects(objTracker) {
   });
 }
 
-/**
- * Mouse controls
- *
- * TODO: fix dragging to move camera in plane, separate button for rotate
- */
-var cameraAngleY = 0;  // - PI..PI
-var cameraAngleX = 0;  // - PI..PI
-var cameraDistance = cameraZInit;
-document.onmousewheel = function (event) {
-  cameraDistance += event.wheelDeltaY * cameraZMax/2000;
-  if (cameraDistance < 0) { cameraDistance = 0; }
-  if (cameraDistance > cameraZMax) { cameraDistance = cameraZMax; }
-  updateCamera();
-};
-
-var oldMouseX = null;
-var oldMouseY = null;
-document.onmousedown = function (evt) {
-  oldMouseX = evt.x;
-  oldMouseY = evt.y;
-};
-document.onmouseup = function () {
-  oldMouseX = null;
-  oldMouseY = null;
-};
-
 var zeroPoint = new THREE.Vector3(0,0,0);
 var rotationY = new THREE.Matrix4();
 var rotationX = new THREE.Matrix4();
 var translation = new THREE.Matrix4();
 var positionMatrix = new THREE.Matrix4();
-document.onmousemove = function (evt) {
-  if (oldMouseX != null) {
-    var mouseDeltaX = evt.x - oldMouseX;
-    var mouseDeltaY = evt.y - oldMouseY;
-    cameraAngleY = cameraAngleY -mouseDeltaX*0.01;
-    cameraAngleX = cameraAngleX -mouseDeltaY*0.01;
 
-    if (cameraAngleY > Math.PI / 2) { cameraAngleY = Math.PI / 2; }
-    if (cameraAngleY < -Math.PI / 2) { cameraAngleY = -Math.PI / 2; }
-    if (cameraAngleX > Math.PI / 2) { cameraAngleX = Math.PI / 2; }
-    if (cameraAngleX < -Math.PI / 2) { cameraAngleX = -Math.PI / 2; }
-    updateCamera();
-
-    oldMouseX = evt.x;
-    oldMouseY = evt.y;
-  }
-};
-
-// move camera to new position
-function updateCamera() {
-  rotationY.makeRotationY(cameraAngleY);
-  rotationX.makeRotationX(cameraAngleX);
-  translation.makeTranslation(0, 0, cameraDistance);
+function webgl_updateCamera(orientation) {
+  translation.makeTranslation(orientation.position.x*500, orientation.position.y*500, 500);
+  rotationY.makeRotationY(-orientation.angle.x);
+  rotationX.makeRotationX(-orientation.angle.y);
   positionMatrix.multiplyMatrices( rotationY, rotationX );
   positionMatrix.multiply( translation );
   camera.matrix.identity();
   camera.applyMatrix(positionMatrix);
   camera.lookAt(zeroPoint);
-  render();
+  return orientation;
 }
 
 function render() {

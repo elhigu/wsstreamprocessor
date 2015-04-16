@@ -89,4 +89,82 @@ function UiControls(options) {
     // just trigger dummy options change to trigger objTracker again
     showObjVisualizations.trigger('change');
   });
+
+  /**
+   * Camera position and angle controls
+   */
+
+  this.rotateButtonPressed = Bacon
+    .mergeAll($(document).asEventStream('keydown'), $(document).asEventStream('keyup'))
+    .flatMap(function (event) {
+      // rotatebutton pressed
+      return event.type === 'keydown' && event.keyCode === 16;
+    })
+    .skipDuplicates()
+    .toProperty(false);
+
+  var mouseButtonPressed = Bacon
+    .mergeAll($(document).asEventStream('mousedown'), $(document).asEventStream('mouseup'))
+    .flatMap(function (event) {
+      return event.type === 'mousedown';
+    })
+    .skipDuplicates()
+    .toProperty(false);
+
+  var mousePositions = $(document).asEventStream('mousemove')
+    .merge($(document).asEventStream('mousedown'))
+    .filter(mouseButtonPressed)
+    .flatMap(function (event) {
+      return {
+        startPosition: event.type === 'mousedown',
+        x: event.originalEvent.x,
+        y: event.originalEvent.y
+      };
+    });
+
+  var mouseDeltas = mousePositions
+    .slidingWindow(2,2)
+    .filter(function (positions) {
+      // skip calculation if second item is actually start of next dragging sequence
+      return !positions[1].startPosition;
+    })
+    .map(function (positions) {
+      return {
+        x: positions[1].x - positions[0].x,
+        y: positions[1].y - positions[0].y
+      };
+    });
+
+  function clamp(val, min, max) {
+    return Math.max(Math.min(val, max), min);
+  }
+
+  function normalizedPosition(oldVal, newVal) {
+    return {
+      x: clamp(oldVal.x + newVal.x*0.01, -1, 1),
+      y: clamp(oldVal.y + newVal.y*0.01, -1, 1)
+    };
+  }
+
+  var cameraPosition = mouseDeltas
+    .filter(this.rotateButtonPressed.not())
+    .scan({x: 0, y: 0}, normalizedPosition);
+
+  var cameraAngle = mouseDeltas
+    .filter(this.rotateButtonPressed)
+    .scan({x: 0, y: 0}, normalizedPosition);
+
+  var cameraDistance = cameraZInit;
+  document.onmousewheel = function (event) {
+    cameraDistance += event.wheelDeltaY * cameraZMax/2000;
+    if (cameraDistance < 0) { cameraDistance = 0; }
+    if (cameraDistance > cameraZMax) { cameraDistance = cameraZMax; }
+    updateCamera();
+  };
+
+  this.cameraOrientationEvents = Bacon
+    .combineTemplate({
+      angle: cameraAngle,
+      position: cameraPosition
+    });
 }
