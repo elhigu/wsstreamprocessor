@@ -105,13 +105,14 @@ function UiControls(options) {
 
   var mouseButtonPressed = Bacon
     .mergeAll($(document).asEventStream('mousedown'), $(document).asEventStream('mouseup'))
+    .filter(function (event) { return event.button != 2; })
     .flatMap(function (event) {
       return event.type === 'mousedown';
     })
     .skipDuplicates()
     .toProperty(false);
 
-  var mousePositions = $(document).asEventStream('mousemove')
+  var mouseXYPositions = $(document).asEventStream('mousemove')
     .merge($(document).asEventStream('mousedown'))
     .filter(mouseButtonPressed)
     .flatMap(function (event) {
@@ -122,7 +123,12 @@ function UiControls(options) {
       };
     });
 
-  var mouseDeltas = mousePositions
+  var mouseWheelDeltas = $(document).asEventStream('mousewheel')
+    .flatMap(function (event) {
+      return { z: event.originalEvent.wheelDelta };
+    });
+
+  var mouseXYDeltas = mouseXYPositions
     .slidingWindow(2,2)
     .filter(function (positions) {
       // skip calculation if second item is actually start of next dragging sequence
@@ -146,25 +152,23 @@ function UiControls(options) {
     };
   }
 
-  var cameraPosition = mouseDeltas
+  var cameraXYPosition = mouseXYDeltas
     .filter(this.rotateButtonPressed.not())
     .scan({x: 0, y: 0}, normalizedPosition);
 
-  var cameraAngle = mouseDeltas
+  var cameraAngle = mouseXYDeltas
     .filter(this.rotateButtonPressed)
     .scan({x: 0, y: 0}, normalizedPosition);
 
-  var cameraDistance = cameraZInit;
-  document.onmousewheel = function (event) {
-    cameraDistance += event.wheelDeltaY * cameraZMax/2000;
-    if (cameraDistance < 0) { cameraDistance = 0; }
-    if (cameraDistance > cameraZMax) { cameraDistance = cameraZMax; }
-    updateCamera();
-  };
+  var cameraZPosition = mouseWheelDeltas
+    .scan({z: 0.5}, function (oldVal, newVal) {
+      return { z: clamp(oldVal.z + newVal.z*0.001, 0, 1)};
+    });
 
   this.cameraOrientationEvents = Bacon
     .combineTemplate({
       angle: cameraAngle,
-      position: cameraPosition
-    });
+      xyPosition: cameraXYPosition,
+      zPosition: cameraZPosition
+    }).log();
 }

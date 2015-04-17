@@ -1,3 +1,6 @@
+/**
+ * Draw visualizations and setup camera position etc.
+ */
 
 var scene, camera, renderer;
 var geometry, material, mesh;
@@ -285,14 +288,18 @@ var translation = new THREE.Matrix4();
 var positionMatrix = new THREE.Matrix4();
 
 function webgl_updateCamera(orientation) {
-  translation.makeTranslation(orientation.position.x*500, orientation.position.y*500, 500);
-  rotationY.makeRotationY(-orientation.angle.x);
-  rotationX.makeRotationX(-orientation.angle.y);
+  translation.makeTranslation(
+    -orientation.xyPosition.x*45,
+    orientation.xyPosition.y*45,
+    orientation.zPosition.z*1000+100);
+  rotationY.makeRotationY(-orientation.angle.x*Math.PI/2);
+  rotationX.makeRotationX(-orientation.angle.y*Math.PI/2);
   positionMatrix.multiplyMatrices( rotationY, rotationX );
   positionMatrix.multiply( translation );
   camera.matrix.identity();
   camera.applyMatrix(positionMatrix);
-  camera.lookAt(zeroPoint);
+// TODO: camera could follow some tracked object... :)
+//  camera.lookAt(zeroPoint);
   return orientation;
 }
 
