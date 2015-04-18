@@ -47,6 +47,20 @@ function UiControls(options) {
   }
 
   /**
+   * Frame reader options.
+   */
+  var frameReaderDefaults = {
+    minSpeed : 0
+  };
+
+  var minSpeedInputEl = $('input#minSpeedTh');
+  minSpeedInputEl.val(frameReaderDefaults.minSpeed);
+
+  this.frameReaderParams = Bacon.combineTemplate({
+    minSpeed: numberFieldAsStream(minSpeedInputEl),
+  });
+
+  /**
    * Blob finder options controls.
    */
   var blobFinderDefaults = {
@@ -170,5 +184,5 @@ function UiControls(options) {
       angle: cameraAngle,
       xyPosition: cameraXYPosition,
       zPosition: cameraZPosition
-    }).log();
+    });
 }

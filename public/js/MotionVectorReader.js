@@ -24,7 +24,7 @@ function MotionVectorReader(options) {
   }
 }
 
-MotionVectorReader.prototype.readFrame = function (chunk) {
+MotionVectorReader.prototype.readFrame = function (chunk, options) {
   var data = new DataStream(chunk.data, 0, DataStream.LITTLE_ENDIAN);
   for (var i = 0; i < this.frameVectorCount; i++) {
     var vertexObj = this.vertexObjs[i];
@@ -38,10 +38,15 @@ MotionVectorReader.prototype.readFrame = function (chunk) {
     vertexObj.dy = dy;
 
     if (dx || dy) {
-      hue = (Math.atan2(dy, -dx) / Math.PI + 1) / 2;
       lightness = Math.sqrt(dx * dx + dy * dy) / 128;
-      vertexObj.direction = hue;
-      vertexObj.speed = lightness;
+      if (lightness < options.minSpeed) {
+        vertexObj.direction = 0;
+        vertexObj.speed = 0;
+      } else {
+        hue = (Math.atan2(dy, -dx) / Math.PI + 1) / 2;
+        vertexObj.direction = hue;
+        vertexObj.speed = lightness;
+      }
     } else {
       vertexObj.direction = 0;
       vertexObj.speed = 0;

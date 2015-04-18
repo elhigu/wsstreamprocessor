@@ -29,6 +29,13 @@
           <button onclick="alert('LOLZ!')">Reset to defaults</button>
         </div>
         <div class="row bigone">
+          <span class="info-label">Frame reader option</span>:
+        </div>
+        <div class="row">
+          <span class="info-label">Min speed threshold</span>:
+          <input type="number" step="0.01" id="minSpeedTh">
+        </div>
+        <div class="row bigone">
           <span class="info-label">Show blobs</span>:
           <input type="checkbox" id="showBlobsCheckbox">
         </div>
@@ -38,11 +45,11 @@
         </div>
         <div class="row">
           <span class="info-label">Speed threshold</span>:
-          <input type="number" id="speedTh">
+          <input type="number" step="0.01" id="speedTh">
         </div>
         <div class="row">
           <span class="info-label">Direction threshold</span>:
-          <input type="number" id="directionTh">
+          <input type="number" step="0.01" id="directionTh">
         </div>
         <div class="row">
           <span class="info-label">Blob count</span>:

@@ -49,10 +49,9 @@ $(function() {
       // only 950ms to catch up a bit rather than falling e.g. 1ms behind all the time...
       return Bacon.once(fullFrame.rawFrame).concat(Bacon.later(950/fullFrame.fps).filter(false));
     })
-    // flat map to prevent lazy evaluation
-    .map(function (rawFrame) {
+    .combine(uiControls.frameReaderParams, function (rawFrame, options) {
       statsMs.begin(); // from reading frame, until finishing objectTracker
-      return frameReader.readFrame(rawFrame);
+      return frameReader.readFrame(rawFrame, options);
     });
 
   /**
