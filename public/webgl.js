@@ -42,7 +42,7 @@ function webgl_init() {
   mesh = new THREE.PointCloud(geometry, material);
   scene.add(mesh);
 
-  renderer = new THREE.WebGLRenderer();
+  renderer = new THREE.WebGLRenderer({ preserveDrawingBuffer : true });
   renderer.setSize(1920, 1080);
 
   var wrapper = document.getElementById('canvasWrapper');
@@ -61,6 +61,11 @@ function webgl_init() {
   statsFps.domElement.style.left = '125px';
   statsFps.domElement.style.width = '120px';
   document.body.appendChild(statsFps.domElement);
+  sMs.domElement.style.position = 'absolute';
+  sMs.domElement.style.top = '0px';
+  sMs.domElement.style.left = '250px';
+  sMs.domElement.style.width = '120px';
+  document.body.appendChild(sMs.domElement);
 }
 
 function updateMotionVectorVisualization(frame) {
@@ -304,5 +309,5 @@ function webgl_updateCamera(orientation) {
 }
 
 function render() {
-  renderer.render( scene, camera );
+  renderer.render( scene, camera, null, true );
 }

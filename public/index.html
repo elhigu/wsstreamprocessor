@@ -12,6 +12,7 @@
 
     <script type="text/javascript" src="DataStream.js"></script>
     <script type="text/javascript" src="js/MotionVectorReader.js"></script>
+    <script type="text/javascript" src="js/WebGlMotionVectorReader.js"></script>
     <script type="text/javascript" src="js/BlobFinder.js"></script>
     <script type="text/javascript" src="js/ObjTracker.js"></script>
     <script type="text/javascript" src="js/UiControls.js"></script>
@@ -21,8 +22,30 @@
     <script type="text/javascript" src="js/app.js"></script>
   </head>
   <body>
+
+    <script id="fragment_shader_screen" type="x-shader/x-fragment">
+      varying vec2 vUv;
+      uniform sampler2D data;
+      uniform float threshold;
+      void main() {
+        vec4 sample = texture2D( data, vUv );
+        //sample.z = atan(sample.y, sample.x);
+        //sample.w = sqrt(sample.x * sample.x + sample.y * sample.y);
+        gl_FragColor = sample;
+      }
+    </script>
+
+    <script id="vertexShader" type="x-shader/x-vertex">
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      }
+    </script>
+
     <div id="layout">
-      <div id="canvasWrapper"></div>
+      <div id="canvasWrapper">
+      </div>
       <div id="statsAndControls">
         <div class="row bigone">
           <button onclick="alert('Me has no implemtation.1!')">Save settings</button>

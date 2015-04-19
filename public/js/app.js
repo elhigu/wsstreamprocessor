@@ -18,6 +18,7 @@ var circleMath = {
 };
 
 $(function() {
+  var webGlFrameReader = new WebGlMotionVectorReader();
 
   var uiControls = new UiControls();
 
@@ -51,6 +52,7 @@ $(function() {
     })
     .combine(uiControls.frameReaderParams, function (rawFrame, options) {
       statsMs.begin(); // from reading frame, until finishing objectTracker
+//      return webGlFrameReader.readFrame(rawFrame, options);
       return frameReader.readFrame(rawFrame, options);
     });
 
@@ -142,6 +144,4 @@ $(function() {
       render();
       statsFps.update();
     });
-
-
 });

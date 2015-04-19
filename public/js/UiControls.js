@@ -1,5 +1,6 @@
 var statsFps;
 var statsMs;
+var sMs;
 
 /**
  * Ui controller.
@@ -28,6 +29,10 @@ function UiControls(options) {
       }
     }
   };
+
+  statsFps = new Stats();
+  sMs = new Stats();
+  sMs.setMode(1);
 
   function eventTargetVal(event) {
     return $(event.target).val();
