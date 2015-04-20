@@ -33,7 +33,7 @@ function WebGlMotionVectorReader(options) {
   this.dataTexture = new THREE.DataTexture(
     outputData, 128, 128, THREE.RGBAFormat, THREE.FloatType);
   this.offscreenRenderTarget = new THREE.WebGLRenderTarget(128, 128, {
-    minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter,
+    minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter,
     format: THREE.RGBAFormat, type: THREE.FloatType
   });
 
@@ -41,6 +41,7 @@ function WebGlMotionVectorReader(options) {
   this.cameraRTT = new THREE.OrthographicCamera(-128/2, 128/2, 128/2, -128/2, -10000, 10000);
   this.sceneRTT = new THREE.Scene();
   var plane = new THREE.PlaneBufferGeometry(128, 128);
+
   this.quadMaterial = new THREE.ShaderMaterial({
     uniforms: {
       data: {
@@ -59,21 +60,18 @@ function WebGlMotionVectorReader(options) {
 
 WebGlMotionVectorReader.prototype.readFrame = function (chunk, options) {
   sMs.begin();
-  var gl = renderer.getContext();
-  var dataAsByteArray = new Uint8Array(chunk.data);
+  var dataAsByteArray = new Int8Array(chunk.data);
   this.inputData.set(dataAsByteArray);
   this.inputDataTexture.needsUpdate = true;
   this.quadMaterial.uniforms.threshold.value = options.minSpeed;
+
+  // Directly output data to screen...
+  // render = _.noop;
+  // renderer.render( this.sceneRTT, this.cameraRTT, null, true );
+
   renderer.render( this.sceneRTT, this.cameraRTT, this.offscreenRenderTarget, true );
-  renderer.render( this.sceneRTT, this.cameraRTT, null, true );
+  var gl = renderer.getContext();
   gl.readPixels( 0, 0, 128, 128, gl.RGBA, gl.FLOAT, this.dataTexture.image.data );
-  sMs.end();
-
-
-  var firstDataIndex = _.findIndex(this.dataTexture.image.data, function (t) { return t > 0;});
-  console.log("IN:", this.inputData,
-    "OUT:", this.dataTexture.image.data,
-    "FirstItem:", firstDataIndex, "Value:", this.dataTexture.image.data[firstDataIndex]*255);
 
   for (var i = 0; i < this.frameVectorCount; i++) {
     var vertexObj = this.vertexObjs[i];
@@ -82,6 +80,7 @@ WebGlMotionVectorReader.prototype.readFrame = function (chunk, options) {
     vertexObj.direction = this.dataTexture.image.data[i*4+2];
     vertexObj.speed = this.dataTexture.image.data[i*4+3];
   }
+  sMs.end();
 
   return this.vertexObjs;
 };

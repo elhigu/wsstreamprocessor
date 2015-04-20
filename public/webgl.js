@@ -13,7 +13,7 @@ var SCALE_DEPTH = 0.3;
 
 
 
-function webgl_init() {
+function webgl_init(frameReader) {
   vertices = new Float32Array(frameReader.frameVectorCount * 3);
   colors = new Float32Array(frameReader.frameVectorCount * 3);
 
@@ -68,7 +68,7 @@ function webgl_init() {
   document.body.appendChild(sMs.domElement);
 }
 
-function updateMotionVectorVisualization(frame) {
+function updateMotionVectorVisualization(frame, frameReader) {
   // update motion vector colors / positions
   var color = new THREE.Color();
   for (var i = 0; i < frameReader.frameVectorCount*3; i+=3) {

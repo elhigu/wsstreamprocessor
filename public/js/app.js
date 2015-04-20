@@ -1,4 +1,3 @@
-var frameReader = new MotionVectorReader();
 var blobFinder = new BlobFinder();
 var objTracker = new ObjTracker();
 var circleMath = {
@@ -18,11 +17,11 @@ var circleMath = {
 };
 
 $(function() {
-  var webGlFrameReader = new WebGlMotionVectorReader();
+  var frameReader = new WebGlMotionVectorReader();
 
   var uiControls = new UiControls();
 
-  webgl_init();
+  webgl_init(frameReader);
 
   /**
    * Read socket.io events to streams
@@ -52,7 +51,6 @@ $(function() {
     })
     .combine(uiControls.frameReaderParams, function (rawFrame, options) {
       statsMs.begin(); // from reading frame, until finishing objectTracker
-//      return webGlFrameReader.readFrame(rawFrame, options);
       return frameReader.readFrame(rawFrame, options);
     });
 
@@ -138,7 +136,7 @@ $(function() {
     })
     .sampledBy(updateRequiredStream)
     .onValue(function (latestData) {
-      updateMotionVectorVisualization(latestData.motionVectors);
+      updateMotionVectorVisualization(latestData.motionVectors, frameReader);
       updateBlobVisualizations(latestData.blobs);
       updateObjectTrackingVisualizations(latestData.objTracker);
       render();
