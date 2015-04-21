@@ -21,9 +21,9 @@ function WebGlMotionVectorReader(options) {
     }
   }
 
-  // input data buffer
+  // input data buffer (couldn't get Int8Array type to work... conversion done in shader..)
   this.inputData = new Uint8Array(128*128*4);
-  this.inputDataTexture = new THREE.DataTexture( this.inputData, 128, 128, THREE.RGBAFormat );
+  this.inputDataTexture = new THREE.DataTexture( this.inputData, 128, 128, THREE.RGBAFormat, THREE.UnsignedByteType );
   this.inputDataTexture.wrapS = THREE.RepeatWrapping;
   this.inputDataTexture.wrapT = THREE.RepeatWrapping;
   this.inputDataTexture.needsUpdate = true;
@@ -51,7 +51,7 @@ function WebGlMotionVectorReader(options) {
       threshold: { type: "f", value: 0.0 }
     },
     vertexShader: document.getElementById( 'vertexShader' ).textContent,
-    fragmentShader: document.getElementById( 'fragment_shader_screen' ).textContent,
+    fragmentShader: document.getElementById( 'fragmentShaderProcessInputFrame' ).textContent,
     depthWrite: false
   });
   var quad = new THREE.Mesh( plane, this.quadMaterial );
@@ -66,8 +66,8 @@ WebGlMotionVectorReader.prototype.readFrame = function (chunk, options) {
   this.quadMaterial.uniforms.threshold.value = options.minSpeed;
 
   // Directly output data to screen...
-  // render = _.noop;
-  // renderer.render( this.sceneRTT, this.cameraRTT, null, true );
+  //render = _.noop;
+  //renderer.render( this.sceneRTT, this.cameraRTT, null, true );
 
   renderer.render( this.sceneRTT, this.cameraRTT, this.offscreenRenderTarget, true );
   var gl = renderer.getContext();
@@ -80,7 +80,7 @@ WebGlMotionVectorReader.prototype.readFrame = function (chunk, options) {
     vertexObj.direction = this.dataTexture.image.data[i*4+2];
     vertexObj.speed = this.dataTexture.image.data[i*4+3];
   }
-  sMs.end();
 
+  sMs.end();
   return this.vertexObjs;
 };

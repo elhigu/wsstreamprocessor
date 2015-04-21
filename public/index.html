@@ -31,18 +31,22 @@
       }
     </script>
 
-    <script id="fragment_shader_screen" type="x-shader/x-fragment">
+    <script id="fragmentShaderProcessInputFrame" type="x-shader/x-fragment">
       const float PI = 3.14159265358979323846264;
       varying vec2 vUv;
       uniform sampler2D data;
       uniform float threshold;
       void main() {
-        vec4 sample = texture2D( data, vUv )*255.0;
-        if (sample.xy == vec2(0,0)) {
+        vec4 sample = texture2D( data, vUv );
+        // 2-complement conversion since input data should have been int8, not uint8
+        sample.x = sample.x < 0.5 ? sample.x : (-0.5+(sample.x-0.5)); // range [-0.5 .. 0.5]
+        sample.y = sample.y < 0.5 ? sample.y : (-0.5+(sample.y-0.5));
+        sample.w = sqrt(sample.x * sample.x + sample.y * sample.y);
+        if (sample.xy == vec2(0,0) || sample.w < threshold) {
           gl_FragColor = vec4(0,0,0,0);
         } else {
           sample.z = (atan(sample.y, -sample.x)/PI+1.0)/2.0;
-          sample.w = sqrt(sample.x * sample.x + sample.y * sample.y)/128.0;
+          sample.xy *= 255.0;
           gl_FragColor = sample;
         }
       }
