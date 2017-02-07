@@ -1,5 +1,7 @@
 # Websocket pipeline to stream data to be able to process in browser
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/elhigu/wsstreamprocessor.svg)](https://greenkeeper.io/)
+
 Configured to read / split motion vector data from RaspiCam
 
 1. server.js reads data from stdin (fed by raspivid) and splits it to frames + listens for websocket connections
